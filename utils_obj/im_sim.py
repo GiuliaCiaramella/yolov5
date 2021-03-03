@@ -53,6 +53,7 @@ def extract_features(file, model = model):
 
 
 def get_feat_vec_data(path):
+
     """
     read the txt file containing the vectors of images and return the text as a matrix of arrays
     """
