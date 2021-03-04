@@ -7,7 +7,7 @@ import imgaug.augmenters as iaa
 from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
 import os
 import imageio
-
+import random
 
 def bbs2xywhn(bbs):
     global h, w
@@ -33,21 +33,33 @@ def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
 
 def aug_type(tform):
     seq = ''
+    angle = random.randint(10,30)
     if tform == 'rotate':
         seq = iaa.Sequential([
             iaa.Affine(
-                rotate=15
+                rotate=angle
             )
         ])
     elif tform == 'shear':
         seq = iaa.Sequential([
             iaa.Affine(
-                shear=15
+                shear=angle
+            )
+        ])
+    elif tform == 'scale':
+        x_list = [random.randint(2,7)/random.randint(8,10), random.randint(2,6) ]
+        y_list = [random.randint(2, 6), random.randint(2,7) / random.randint(8, 10)]
+        x,y = random.choice(x_list), random.choice(y_list)
+        print(x,y)
+        seq = iaa.Sequential([
+            iaa.Affine(
+                scale=(x,y)
+
             )
         ])
     return(seq)
 
-def pipeline(img, lab, tr=['rotate', 'shear']):
+def pipeline(img, lab, tr=['rotate', 'shear', 'scale']):
     with open(lab, 'r') as f:
         raw = []
         complete_row = []
@@ -70,7 +82,6 @@ def pipeline(img, lab, tr=['rotate', 'shear']):
     bbs = BoundingBoxesOnImage(bb, shape=image.shape)
 
     for r in tr:
-        print(r)
         seq= aug_type(r)
         new_lab = lab.replace('original', r)
         # Augment BBs and images.
@@ -83,7 +94,7 @@ def pipeline(img, lab, tr=['rotate', 'shear']):
         #         i.x1, i.y1, i.x2, i.y2)
         #     )
 
-        ia.imshow(image_before)
+        # ia.imshow(image_before)
         ia.imshow(image_after)
         imageio.imwrite(img.replace('original', r),image_aug)
 
@@ -100,9 +111,9 @@ def pipeline(img, lab, tr=['rotate', 'shear']):
 
 
 
-img = 'prova_original.jpg'
-lab = 'prova_original.txt'
+img = 'aug_im\prova_original.jpg'
+lab = 'aug_im\prova_original.txt'
 # img = 'prova_shear.jpg'
 # lab = 'prova_shear.txt'
 
-pipeline(img, lab)
+pipeline(img, lab, tr=['scale'])
