@@ -1,10 +1,12 @@
 # to preprocess image
-from keras.preprocessing.image import load_img
-from keras.applications.vgg16 import preprocess_input
-
-# models
-from keras.applications.vgg16 import VGG16
-from keras.models import Model
+# from keras.preprocessing.image import load_img
+# from keras.applications.vgg16 import preprocess_input
+#
+# # models
+# from keras.applications.vgg16 import VGG16
+# from keras.models import Model
+model = ''# VGG16()
+# model = Model(inputs=model.inputs, outputs=model.layers[-2].output)
 
 # for everything else
 import os
@@ -21,8 +23,7 @@ from .obj_tracker import read_classes
 # to plot boxes
 from utils.plots import plot_one_box
 
-model = VGG16()
-model = Model(inputs=model.inputs, outputs=model.layers[-2].output)
+
 img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng']  # acceptable image suffixes
 
 COLOR = {
@@ -35,7 +36,9 @@ COLOR = {
     'green': '\033[92m',
     'magenta': '\033[95m',
     'white': '\033[97m',
-    'red': '\033[91m'
+    'red': '\033[91m',
+    'end': '\033[0m ',
+    'bold': '\033[1m',
 }
 
 def extract_features(file, model = model):
@@ -107,17 +110,78 @@ def vectorize(feat_vec_path, im_path):
         f.close()
 
 
-def check_sim(vec, data, sim_th=0.95):
+def check_sim(vec, data, sim_th=0.95, obj=0):
     """
     evaluate the similarity between 1 vector and all the other vectors in data.
     Returns True is the new image is very similar to image already present (sim>threshold)
+    obj indicates the metric: how many similar images can exist. Default = 0
     """
-    sim = [1-distance.cosine(vec, k) for k in data]
+    sim = [1-distance.cosine(vec, k) for k in data if not np.all((k==-1))]
     max_sim = max(sim)
-    if max_sim>=sim_th:
-        return True # new vector is similar to someone that we have and should not be added
+    if obj !=0 :
+        s = list(filter(lambda x: x>sim_th, sim))
+        if len(s) >= obj:
+            return True
+        else:
+            return False
     else:
-        return False # new vec is different to anyother images and should be added
+        if max_sim>=sim_th:
+            # print(max_sim)
+            return True # new vector is similar to someone that we have and should not be added
+        else:
+            return False # new vec is different to anyother images and should be added
+
+def remove_sim(feat_vec_path, im_path, sim_th=0.95):
+    data = get_feat_vec_data(feat_vec_path)
+    print('Checking similarities among %d images...' %len(data))
+
+    where = []
+
+    for i in range(len(data)):
+        cur = data[i]
+        dc = np.delete(data,i,0)
+        res = check_sim(cur, dc)
+        if res:
+            data[i] = np.full(shape = cur.shape, fill_value=-1)
+            where.append(i)
+
+    if where:
+        print('%d images are similar. \nRemoving...' %(len(where)))
+        del_im(where, im_path)
+        res = np.delete(data, np.where(np.all(k == -1 for k in data)), axis=0)
+        mat = np.matrix(res)
+
+        with open(feat_vec_path, 'wb') as f:
+            for line in mat:
+                np.savetxt(f, line, fmt='%.2f')
+        f.close()
+        print('Done. Removed \033[91m%d\033[0m  similar images' %(len(where)))
+    else:
+        print('Done. No images where removed.')
+
+
+def del_im(where, im_path):
+    im = [i for i in os.listdir(im_path) if i.split('.')[-1].lower() in img_formats]
+    c = os.path.join(im_path, 'copied')
+    if not os.path.exists(c):
+        os.makedirs(c)
+
+    for i in where:
+        ir = im[i]
+        shutil.copyfile(os.path.join(im_path, ir), os.path.join(c, ir))
+        os.remove(os.path.join(im_path, ir))
+
+def update_feat_matrix(data, feat_vec_path):
+    try:
+        mat = np.matrix(data)
+        with open(feat_vec_path, 'wb') as f:
+            for line in mat:
+                np.savetxt(f, line, fmt='%.2f')
+            f.close()
+        return ('New features vector data updated')
+    except Exception as e:
+        print('Error occurred when updating the new feature dataset: ', e)
+
 
 
 def array2image(im_array):
@@ -221,6 +285,17 @@ class Sim(object):
 
         # implement here iteractive plots
 
+
+if __name__=='__main__':
+
+    path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized\feat_vectors.txt'
+    im_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized'
+    #remove_sim(path, im_path)
+
+    a = np.full((3,3), 3)
+    print(a)
+    b = np.full_like(a, 1)
+    print(b)
 
 
 

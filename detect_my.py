@@ -24,7 +24,7 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 from progress.bar import Bar
 
 from utils_obj.im_sim import Sim
-from utils_obj.obj_tracker import  Tracker
+from utils_obj.obj_tracker import Tracker
 
 warnings.filterwarnings(action='ignore')
 pd.set_option("display.max_columns", 150)

@@ -435,9 +435,12 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
+    data = r'C:\Users\Giulia Ciaramella\PycharmProjects\yolov5\data\storage_tank_data\data.yaml'
+    w = r'C:\Users\Giulia Ciaramella\PycharmProjects\yolov5\weights\last (1).pt'
+
+    parser.add_argument('--weights', type=str, default=w, help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='data.yaml path')
+    parser.add_argument('--data', type=str, default=data, help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
@@ -471,8 +474,9 @@ if __name__ == '__main__':
     opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
     set_logging(opt.global_rank)
     if opt.global_rank in [-1, 0]:
-        check_git_status()
-        check_requirements()
+        #check_git_status()
+        #check_requirements()
+        pass
 
     # Resume
     if opt.resume:  # resume an interrupted run

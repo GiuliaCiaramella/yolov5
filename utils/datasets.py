@@ -1,4 +1,5 @@
 # Dataset utils and dataloaders
+import imageio
 
 import glob
 import logging
