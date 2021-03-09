@@ -1,12 +1,12 @@
 # to preprocess image
-# from keras.preprocessing.image import load_img
-# from keras.applications.vgg16 import preprocess_input
-#
-# # models
-# from keras.applications.vgg16 import VGG16
-# from keras.models import Model
-model = ''# VGG16()
-# model = Model(inputs=model.inputs, outputs=model.layers[-2].output)
+from keras.preprocessing.image import load_img
+from keras.applications.vgg16 import preprocess_input
+
+# models
+from keras.applications.vgg16 import VGG16
+from keras.models import Model
+model = VGG16()
+model = Model(inputs=model.inputs, outputs=model.layers[-2].output)
 
 # for everything else
 import os
@@ -79,25 +79,35 @@ def vectorize(feat_vec_path, im_path):
     method to vectorize multiple images
     :param path is the path where to find the training images
     img_format
+    image is added only if img sim is not greater than a th.
     """
     # this list holds all the image filename
-    pic = []
-    with os.scandir(im_path) as files:
-        # loops through each file in the directory
-        for file in files:
-            if file.name.split('.')[-1].lower() in img_formats:
-                # adds only the image files to the list
-                pic.append(file.name)
+    pic = [os.path.join(im_path, i) for i in os.listdir(im_path) if i.split('.')[-1].lower() in img_formats]
     data = []
     c = 0
+    not_cop = 0
+    where = []
+    ind = 0
     for i in pic:
-        # try to extract the features and update the list
-        try:
+        if i == pic[0]:
             feat = extract_features(i, model)
             data.append(feat)
-        # if something fails, save the extracted features as a pickle file (optional)
-        except:
-            c+=1
+        else:
+            # try to extract the features and update the list
+            try:
+                feat = extract_features(i, model)
+                sim = check_sim(feat, data)
+                if not sim:
+                    data.append(feat)
+                else:
+                    not_cop+=1
+                    where.append(ind)
+            # if something fails, save the extracted features as a pickle file (optional)
+            except Exception as e:
+                print(e)
+                c+=1
+        ind +=1
+    del_im(where, im_path)
 
     # save features in txt file
     feat = np.asarray(data)
@@ -108,6 +118,7 @@ def vectorize(feat_vec_path, im_path):
         for line in mat:
             np.savetxt(f, line, fmt='%.2f')
         f.close()
+    return(not_cop)
 
 
 def check_sim(vec, data, sim_th=0.95, obj=0):
@@ -118,6 +129,7 @@ def check_sim(vec, data, sim_th=0.95, obj=0):
     """
     sim = [1-distance.cosine(vec, k) for k in data if not np.all((k==-1))]
     max_sim = max(sim)
+    # print(max_sim)
     if obj !=0 :
         s = list(filter(lambda x: x>sim_th, sim))
         if len(s) >= obj:
@@ -131,38 +143,46 @@ def check_sim(vec, data, sim_th=0.95, obj=0):
         else:
             return False # new vec is different to anyother images and should be added
 
-def remove_sim(feat_vec_path, im_path, sim_th=0.95):
-    data = get_feat_vec_data(feat_vec_path)
-    print('Checking similarities among %d images...' %len(data))
+def remove_sim(feat_vec_path, im_path, create_feat=False,  sim_th=0.95):
+    if create_feat:
+        not_copied = vectorize(feat_vec_path, im_path)
+        if not_copied!=0:
+            print('Done. %d images were not vectorized and have been removed from the dataset because very similar.' %not_copied)
+        else:
+            print('Done. All the images were vectorized.')
 
-    where = []
-
-    for i in range(len(data)):
-        cur = data[i]
-        dc = np.delete(data,i,0)
-        res = check_sim(cur, dc)
-        if res:
-            data[i] = np.full(shape = cur.shape, fill_value=-1)
-            where.append(i)
-
-    if where:
-        print('%d images are similar. \nRemoving...' %(len(where)))
-        del_im(where, im_path)
-        res = np.delete(data, np.where(np.all(k == -1 for k in data)), axis=0)
-        mat = np.matrix(res)
-
-        with open(feat_vec_path, 'wb') as f:
-            for line in mat:
-                np.savetxt(f, line, fmt='%.2f')
-        f.close()
-        print('Done. Removed \033[91m%d\033[0m  similar images' %(len(where)))
     else:
-        print('Done. No images where removed.')
+        data = get_feat_vec_data(feat_vec_path)
+        print('Checking similarities among %d images...' %len(data))
+
+        where = []
+
+        for i in range(len(data)):
+            cur = data[i]
+            dc = np.delete(data,i,0)
+            res = check_sim(cur, dc)
+            if res:
+                data[i] = np.full(shape = cur.shape, fill_value=-1)
+                where.append(i)
+
+        if where:
+            print('%d images are similar. \nRemoving...' %(len(where)))
+            del_im(where, im_path)
+            res = np.delete(data, np.where(np.all(k == -1 for k in data)), axis=0)
+            mat = np.matrix(res)
+
+            with open(feat_vec_path, 'wb') as f:
+                for line in mat:
+                    np.savetxt(f, line, fmt='%.2f')
+            f.close()
+            print('Done. Removed \033[91m%d\033[0m  similar images' %(len(where)))
+        else:
+            print('Done. No images where removed.')
 
 
 def del_im(where, im_path):
     im = [i for i in os.listdir(im_path) if i.split('.')[-1].lower() in img_formats]
-    c = os.path.join(im_path, 'copied')
+    c = os.path.join(im_path, 'removed')
     if not os.path.exists(c):
         os.makedirs(c)
 
@@ -288,24 +308,16 @@ class Sim(object):
 
 if __name__=='__main__':
 
-    path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized\feat_vectors.txt'
-    im_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized'
-    #remove_sim(path, im_path)
+    # path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized\feat_vectors.txt'
+    feat_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\image_divers\not copied\feat_vectors.txt'
+    im_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\image_divers\not copied'
+    remove_sim(feat_path, im_path, create_feat=True)
 
     # a = np.full((3,3), 3)
     # print(a)
     # b = np.full_like(a, 1)
     # print(b)
 
-    st = "['ciao', 'come', 'stai']"
-    s = st.replace("'", '')
-    s = s.replace("[", '')
-    s = s.replace("]", '')
-    s = "".join(k for k in s)
-    s = s.replace(' ', '')
-    f = s.split(',')
-    classes = [i for i in f]
-    print(classes)
 
 
 
