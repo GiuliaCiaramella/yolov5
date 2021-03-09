@@ -214,7 +214,7 @@ def detect(save_img=False):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+
 
     # from general conf, read which assets already exist and detection can be run
     general_conf = r'C:\Users\Giulia Ciaramella\PycharmProjects\E2E\general_conf.yaml'
@@ -247,7 +247,7 @@ if __name__ == '__main__':
     conf_th = 0.5
     size = 256
 
-
+    parser = argparse.ArgumentParser()
     parser.add_argument('--yaml-file', nargs='+', type=str, default=yaml_file)
     parser.add_argument('--save-dataframe', default=True)
     parser.add_argument('--weights', nargs='+', type=str, default=weight, help='model.pt path(s)')

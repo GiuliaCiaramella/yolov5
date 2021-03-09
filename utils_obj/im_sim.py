@@ -18,7 +18,7 @@ import shutil
 import datetime
 from PIL import Image
 
-from .obj_tracker import read_classes
+from obj_tracker import read_classes
 
 # to plot boxes
 from utils.plots import plot_one_box
@@ -292,10 +292,20 @@ if __name__=='__main__':
     im_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized'
     #remove_sim(path, im_path)
 
-    a = np.full((3,3), 3)
-    print(a)
-    b = np.full_like(a, 1)
-    print(b)
+    # a = np.full((3,3), 3)
+    # print(a)
+    # b = np.full_like(a, 1)
+    # print(b)
+
+    st = "['ciao', 'come', 'stai']"
+    s = st.replace("'", '')
+    s = s.replace("[", '')
+    s = s.replace("]", '')
+    s = "".join(k for k in s)
+    s = s.replace(' ', '')
+    f = s.split(',')
+    classes = [i for i in f]
+    print(classes)
 
 
 
