@@ -18,7 +18,7 @@ import shutil
 import datetime
 from PIL import Image
 
-from obj_tracker import read_classes
+from .obj_tracker import read_classes
 
 # to plot boxes
 from utils.plots import plot_one_box
@@ -188,7 +188,7 @@ def del_im(where, im_path):
 
     for i in where:
         ir = im[i]
-        shutil.copyfile(os.path.join(im_path, ir), os.path.join(c, ir))
+        #shutil.copyfile(os.path.join(im_path, ir), os.path.join(c, ir))
         os.remove(os.path.join(im_path, ir))
 
 def update_feat_matrix(data, feat_vec_path):
@@ -311,7 +311,7 @@ if __name__=='__main__':
     # path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized\feat_vectors.txt'
     feat_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\image_divers\not copied\feat_vectors.txt'
     im_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\image_divers\not copied'
-    remove_sim(feat_path, im_path, create_feat=True)
+    # remove_sim(feat_path, im_path, create_feat=True)
 
     # a = np.full((3,3), 3)
     # print(a)

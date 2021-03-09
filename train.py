@@ -38,13 +38,17 @@ logger = logging.getLogger(__name__)
 
 def train(hyp, opt, device, tb_writer=None, wandb=None):
     logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
-    save_dir, epochs, batch_size, total_batch_size, weights, rank = \
-        Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
+    save_dir, epochs, batch_size, total_batch_size, weights, rank, save_weight_file_path= \
+        Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank, opt.final_weights
 
     # Directories
     wdir = save_dir / 'weights'
     wdir.mkdir(parents=True, exist_ok=True)  # make dir
-    last = wdir / 'last.pt'
+    save_weight_file_path = Path(save_weight_file_path)
+    if not os.path.exists(Path(save_weight_file_path)):
+        os.makedirs(Path(save_weight_file_path))
+    last = save_weight_file_path / 'last.pt'# here we save the weight depending on what we read in the yaml file # old= wdir / 'last.pt'
+
     best = wdir / 'best.pt'
     results_file = save_dir / 'results.txt'
 
@@ -462,15 +466,17 @@ if __name__ == '__main__':
     img_size_tr = current_yaml['img_size_tr']
     img_size_test = current_yaml['img_size_test']
 
-    weight_file_path = current_yaml['weight_file_path']
+    save_weight_file_path = Path(current_yaml['weight_file_path'])
     feat_vec_path = current_yaml['feat_vec_path']
 
 
     parser = argparse.ArgumentParser()
-    data = current_yaml # stores data for training, test and validation images (and labels) path
+    data = yaml_file # stores data for training, test and validation images (and labels) path
     w = r'C:\Users\Giulia Ciaramella\PycharmProjects\yolov5\weights\last (1).pt'
 
     parser.add_argument('--weights', type=str, default=w, help='initial weights path')
+    parser.add_argument('--final-weights', type=str, default=save_weight_file_path, help='final weights path')
+
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default=data, help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
@@ -521,7 +527,9 @@ if __name__ == '__main__':
         logger.info('Resuming training from %s' % ckpt)
     else:
         # opt.hyp = opt.hyp or ('hyp.finetune.yaml' if opt.weights else 'hyp.scratch.yaml')
-        opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
+        opt.data = check_file(opt.data)  # check files
+        opt.cfg = check_file(opt.cfg)  # check files
+        opt.hyp = check_file(opt.hyp)
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
         opt.name = 'evolve' if opt.evolve else opt.name

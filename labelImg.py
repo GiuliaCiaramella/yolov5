@@ -53,6 +53,7 @@ from libs.hashableQListWidgetItem import HashableQListWidgetItem
 
 __appname__ = 'labelImg'
 
+from utils_obj.im_sim import *
 
 class WindowMixin(object):
 
@@ -1652,7 +1653,12 @@ def get_main_app_new(argv=[]):
         else:
             i = True
 
-    print('Lunching labeling..')
+    print('Thank you! Now before labeling, I will remove images too similar. Just a moment...')
+    feat_vec_path = current_yaml['feat_vec_path']
+    remove_sim(feat_vec_path, p, create_feat=True)
+
+
+    print('Done. Now lunching labeling..')
 
     argparser = argparse.ArgumentParser()
     argparser.add_argument("image_dir", default = p , nargs="?")
