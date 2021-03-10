@@ -138,7 +138,6 @@ def detect(save_img=False):
                         n = (det[:, -1] == c).sum()  # detections per class
                         s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
-                    # if s_ == 'not_sim', pass the detection
                     if s_ == 'not_sim':
                         sim.save_detection(det)
 
@@ -249,8 +248,8 @@ if __name__ == '__main__':
     # How does the detector choose? goes on a video and press 'detect' or run detect and select the video?
     # source = r'F:\VivaDrive\v3d\fragmented_video_drone\pressure vessel\061_0038.mov'
     source = r'C:\Users\Giulia Ciaramella\Desktop\v3d\cut-videos-ai\01_3internalc_360p.MOV'
-    conf_th = 0.5
-    size = 256
+    conf_th = 0.6
+    size = 416
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--yaml-file', nargs='+', type=str, default=yaml_file)
