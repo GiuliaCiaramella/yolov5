@@ -139,7 +139,16 @@ def detect(save_img=False):
                         s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                     if s_ == 'not_sim':
-                        sim.save_detection(det)
+                        lines = []
+                        for *xyxy, conf, cls in reversed(det):
+                            l = []
+                            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                            l = [int(cls.item())] + xywh
+                            # l.append(i for i in xywh)
+                            lines.append(l)
+                            print(l)
+                            print(lines)
+                        sim.save_detection(lines)
 
                     # Write results
                     for *xyxy, conf, cls in reversed(det):
