@@ -1653,9 +1653,9 @@ def get_main_app_new(argv=[]):
             print('Error! This path does not exists. Give an existing path.')
         else:
             video_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv','mkv']  # acceptable video suffixes
-            if p.split('.')[-1].lower() in video_formats:
-                fpath = fragment_video(p)
-                p = fpath
+            if str(p).split('.')[-1].lower() in video_formats:
+                print('Started to extract frames from the video you gave...[Can take a while]')
+                p = fragment_video(p)
             i = True
 
     print('Thank you! Now before labeling, I will remove images too similar. Just a moment...')
@@ -1688,5 +1688,6 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+
 
 

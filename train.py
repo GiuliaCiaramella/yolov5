@@ -460,6 +460,7 @@ if __name__ == '__main__':
     with open(yaml_file) as file:
         current_yaml = yaml.full_load(file)
     file.close()
+    file.close()
 
     epochs = current_yaml['epochs']
     batch_size= current_yaml['batch_size']
