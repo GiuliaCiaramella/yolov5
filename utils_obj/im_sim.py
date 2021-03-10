@@ -17,12 +17,12 @@ import yaml
 import shutil
 import datetime
 from PIL import Image
-
+import imageio
 from .obj_tracker import read_classes
 
 # to plot boxes
 from utils.plots import plot_one_box
-
+import matplotlib.pyplot as plt
 
 img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng']  # acceptable image suffixes
 
@@ -219,21 +219,20 @@ class Sim(object):
         with open(yaml_file, 'r') as f:
             self.d = yaml.full_load(f)
         f.close()
-        vectors = self.d['vector_images']
+        vectors = self.d['feat_vec_path']
         self.data = get_feat_vec_data(vectors).copy()
-        self.temp_pic = './temp_label/'
         self.added = {} # image path: vector, so it's easier at teh end copy only the images actually labeled
         self.last_simil = 0
-
         self.classes, _ = read_classes(yaml_file)
-
-
         self.skip = 1 # frames to skip similarity check.
+
+
+    def info(self, fps, save_dir):
+        self.fps = fps
+        self.temp_pic = str(save_dir)  # './temp_label/'
         if not os.path.exists(self.temp_pic):
             os.makedirs(self.temp_pic)
 
-    def info(self, fps):
-        self.fps = fps
 
     def new_im(self, im, frame):
         """
@@ -285,12 +284,13 @@ class Sim(object):
             i = False
             while not i:
                 value = input("Do you want to see new images available for labeling? \n \033[1m[Y] or [N] \033[0m \n " )
+                if value.lower() == 'y':
+                    self.render_images()
                 if value.lower() not in ['y', 'n']:
                     print('\033[91mError!\033[0m Please type \033[1m[Y] or [N] \033[0m \n.')
                 else:
                     i = True
-                if value.lower() == 'y':
-                    self.render_images()
+
 
 
         else:
@@ -299,9 +299,14 @@ class Sim(object):
 
     def render_images(self):
         ann = []
-        im = [i if not i.endswith('txt') else ann.append(i) for i in os.listdir(self.temp_pic)]
+        t = self.temp_pic
+
+        im = [os.path.join(t,i) for i in os.listdir(t) if i.split('.')[-1].lower() in img_formats ]
         im = list(filter(None, im))
-        print(im)
+
+        for i in im:
+            image = Image.open(i)
+            image.show()
 
         # implement here iteractive plots
 
