@@ -156,7 +156,6 @@ def remove_sim(feat_vec_path, im_path, create_feat=False,  sim_th=0.95):
         print('Checking similarities among %d images...' %len(data))
 
         where = []
-
         for i in range(len(data)):
             cur = data[i]
             dc = np.delete(data,i,0)
@@ -271,11 +270,19 @@ class Sim(object):
         return(res)
 
     def save_detection(self, det):
-        for *xyxy, conf, cls in reversed(det):
-            #xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-            line = (cls, *xyxy, conf)   # label format
-            with open(self.new_temp_path[:-4] + '.txt', 'a') as f:
-                f.write(('%g ' * len(line)).rstrip() % line + '\n')
+        # for *xyxy, conf, cls in reversed(det):
+        #     # xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+        #     line = (cls, *xyxy)   # label format
+        #     with open(self.new_temp_path[:-4] + '.txt', 'a') as f:
+        #         f.write(('%g ' * len(line)).rstrip() % line + '\n')
+
+        lines = np.matrix(det)
+        with open(self.new_temp_path[:-4] + '.txt', 'wb') as f:
+            for line in lines:
+                np.savetxt(f, line, fmt='%.2f')
+            f.close()
+
+
 
     def end(self):
         if self.added:
@@ -301,14 +308,17 @@ class Sim(object):
         ann = []
         t = self.temp_pic
 
-        im = [os.path.join(t,i) for i in os.listdir(t) if i.split('.')[-1].lower() in img_formats ]
+        im = [os.path.join(t,i) for i in os.listdir(t) if i.split('.')[-1].lower() in img_formats]
         im = list(filter(None, im))
 
         for i in im:
             image = Image.open(i)
             image.show()
 
-        # implement here iteractive plots
+        # TODO:
+        # call the labeling here. Specify in which folder you want to save images and labels.
+        # this needs to be read in the yaml file: current_yaml['temp_pic']
+        # the vector of the labeled images needs to be added in the feature vector of the training.
 
 
 if __name__=='__main__':
