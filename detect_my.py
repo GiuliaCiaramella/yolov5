@@ -5,6 +5,7 @@ parallel, the analysis slows down the detection a pit. Because for each object, 
 
 """
 import yaml
+import os
 import argparse
 import time
 from pathlib import Path
@@ -89,7 +90,7 @@ def detect(save_img=False):
             # pass info to tracker
             if i == 0:
                 tracker.info(fps = fps, save_dir = save_dir)
-                sim.info(fps)
+                sim.info(fps = fps, save_dir = save_dir)
                 i=1
 
             img = torch.from_numpy(img).to(device)
@@ -203,7 +204,9 @@ def detect(save_img=False):
 
     if save_txt or save_img:
         #s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-        print(f"Results saved to {save_dir}{s}")
+        # print(f"Results saved to {save_dir}{s}")
+        print(f"Results saved to {save_dir}")
+
 
     # print('Mean time to assign id: ', np.mean(id_time))
     # print('With variance: ', np.var(id_time))
@@ -239,7 +242,9 @@ if __name__ == '__main__':
     file.close()
 
     # once read the proper yaml path, read weight file path
-    weight = current_yaml['weight_file']
+    wp = current_yaml['weight_file_path']
+    weights = [os.path.join(wp, i) for i in os.listdir(wp) if i.endswith('pt')]  # * means all if need specific format then *.csv
+    weight = max(weights, key=os.path.getctime) # take the last weight
 
     # How does the detector choose? goes on a video and press 'detect' or run detect and select the video?
     # source = r'F:\VivaDrive\v3d\fragmented_video_drone\pressure vessel\061_0038.mov'
