@@ -7,6 +7,9 @@ import time
 from pathlib import Path
 from threading import Thread
 
+# for augmentation
+from utils_obj.augment import *
+
 import numpy as np
 import torch.distributed as dist
 import torch.nn as nn
