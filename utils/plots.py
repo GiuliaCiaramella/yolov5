@@ -61,16 +61,27 @@ def plot_one_box(x, img, objectID = '', color=None, label=None, line_thickness=N
     c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
     cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
     if label:
-        tf = max(tl - 1, 1)  # font thickness
-        t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
+        tf = max(tl - 1, 1)  # font thickness non era /3
+        t_size = cv2.getTextSize(label, 0, fontScale=tl, thickness=tf)[0]
         c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
-        #cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
+        # cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled # ------------> here : devi commentare
         cx = int((x[2]+ x[0])/2.0) # non c'era
         cy = int((x[1]+ x[3])/2.0) # non c'era
-        cv2.circle(img, (cx, cy), 4, color, -1) # to draw the center
+        cv2.circle(img, (cx, cy), 1, color, -1) # to draw the center
         text = "ID {}".format(objectID)
-        cv2.putText(img, text, (cx - 10, cy - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2) # non c'era
-        #cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
+        cv2.putText(img, text, (cx - 10, cy - 10), cv2.FONT_HERSHEY_SIMPLEX, 2, color, 2) #  decommenta
+        # cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA) # commenta
+
+        # tf = int(max(tl - 1, 1))  # font thickness non era /3
+        # t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
+        # c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
+        # cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled # ------------> here : devi commentare
+        # cx = int((x[2] + x[0]) / 2.0)  # non c'era
+        # cy = int((x[1] + x[3]) / 2.0)  # non c'era
+        # cv2.circle(img, (cx, cy), 1, color, -1)  # to draw the center
+        # text = "ID {}".format(objectID)
+        # cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)  # commenta
+
 
 
 
