@@ -9,10 +9,9 @@ import os
 import argparse
 import time
 from pathlib import Path
-import pandas as pd
 import cv2
+# cv2.namedWindow('detection', cv2.WINDOW_AUTOSIZE)
 import torch
-import numpy as np
 import warnings
 import torch.backends.cudnn as cudnn
 from numpy import random
@@ -28,7 +27,6 @@ from utils_obj.im_sim import Sim
 from utils_obj.obj_tracker import Tracker
 
 warnings.filterwarnings(action='ignore')
-pd.set_option("display.max_columns", 150)
 
 
 
@@ -146,8 +144,6 @@ def detect(save_img=False):
                             l = [int(cls.item())] + xywh
                             # l.append(i for i in xywh)
                             lines.append(l)
-                            print(l)
-                            print(lines)
                         sim.save_detection(lines)
 
                     # Write results
@@ -199,7 +195,8 @@ def detect(save_img=False):
                             vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
 
                         vid_writer.write(im0)
-                        cv2.imshow('frame', im0)
+                        res = cv2.resize(im0, (1280,1280))
+                        cv2.imshow('frame', res)
                         cv2.waitKey(1)
 
                         bar.next()
@@ -256,7 +253,14 @@ if __name__ == '__main__':
 
     # How does the detector choose? goes on a video and press 'detect' or run detect and select the video?
     # source = r'F:\VivaDrive\v3d\fragmented_video_drone\pressure vessel\061_0038.mov'
-    source = r'C:\Users\Giulia Ciaramella\Desktop\v3d\cut-videos-ai\01_3internalc_360p.MOV'
+    # source = r'C:\Users\Giulia Ciaramella\Desktop\v3d\cut-videos-ai\01_3internalc_360p.MOV'
+    i = False
+    while not i:
+        source = input("Please select a video to process\n")
+        if not os.path.exists(source):
+            print('Sorry but the path does not exist.\n')
+        else:
+            i = True
     conf_th = 0.6
     size = 416
 
