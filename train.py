@@ -478,8 +478,17 @@ if __name__ == '__main__':
     data = yaml_file # stores data for training, test and validation images (and labels) path
 
     # apply agugmentation before feeding the network
-    tr_data = current_yaml['train'] # ./data/tr_prova/train/images
-    augment(tr_data)
+    if not current_yaml['already_augmented']:
+        # if data have not been augmented yet, augment
+        tr_data = current_yaml['train'] # ./data/tr_prova/train/images
+        augment(tr_data)
+        # after augmentation, I update the configuration file, telling that I have augmented
+        current_yaml['already_augmented'] = True
+        with open(yaml_file, 'w') as y:
+            yaml.dump(current_yaml, y)
+        y.close()
+    else:
+        print('Augmentation will be skipped because previously done.')
 
 
     w = r'C:\Users\Giulia Ciaramella\PycharmProjects\yolov5\weights\last (1).pt'
