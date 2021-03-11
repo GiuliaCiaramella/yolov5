@@ -17,12 +17,9 @@ import yaml
 import shutil
 import datetime
 from PIL import Image
-import imageio
 from .obj_tracker import read_classes
 
 # to plot boxes
-from utils.plots import plot_one_box
-import matplotlib.pyplot as plt
 
 img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng']  # acceptable image suffixes
 
@@ -254,7 +251,7 @@ class Sim(object):
                 if similar:
                     self.last_simil = frame
                     self.skip += 3
-                    print('sim')
+                    # print('sim')
                     # if images are similar, increase the skipping, because is very probable that next frames are similar
                     # and I don't want to see it (I want to save resources)
                 else:
@@ -264,7 +261,7 @@ class Sim(object):
                     self.added[name] = new_vec
                     shutil.copy(self.path_im, self.new_temp_path)
                     #self.skip = 1
-                    print('\033[91mnot sim\033[0m')
+                    # print('\033[91mnot sim\033[0m')
                     res = 'not_sim'
                     # if images are not similar, reset skip step to 1
         return(res)
