@@ -476,11 +476,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     data = yaml_file # stores data for training, test and validation images (and labels) path
+
+    # apply agugmentation before feeding the network
+    tr_data = current_yaml['train'] # ./data/tr_prova/train/images
+    augment(tr_data)
+
+
     w = r'C:\Users\Giulia Ciaramella\PycharmProjects\yolov5\weights\last (1).pt'
 
     parser.add_argument('--weights', type=str, default=w, help='initial weights path')
     parser.add_argument('--final-weights', type=str, default=save_weight_file_path, help='final weights path')
-
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default=data, help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
