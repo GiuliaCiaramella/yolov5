@@ -12,3 +12,4 @@ test: None
 train: None
 val: None
 weight_file_path: None
+wfile_path_freezing_layer: None
