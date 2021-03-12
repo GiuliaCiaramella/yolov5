@@ -502,8 +502,9 @@ if __name__ == '__main__':
                     print('Input not valid')
                 elif retrain.lower() == 'y':
                         # split
-                        # augment
-                        # add pictures in the training set
+                        # augment (initial_path = current_yaml['temp_tr_data_path'], final_path = current_yaml['train'])
+                        # delete pictures in the temp data
+                        # update feat vectors
                         # pass the freezing layers
                         p = True
                         pass
