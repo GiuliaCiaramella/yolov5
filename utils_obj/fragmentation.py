@@ -33,9 +33,6 @@ def fragment_video(video_path, frame_rate=1):
             time_elapsed = time.time() - prev
             frame_exists, curr_frame = cap.read()
             if frame_exists:
-                # cap.set(cv2.CAP_PROP_FPS, float(frame_rate))
-                # cap.set(cv2.CAP_PROP_POS_MSEC, (i * 1000))  # added this line
-                # if cap.get(cv2.CAP_PROP_POS_MSEC) > starting_point:
                 if time_elapsed > 1. / frame_rate:
                     prev = time.time()
                     cv2.imwrite(os.path.join(frame_path, datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss-%fmics") + '_original.jpg'), curr_frame)
