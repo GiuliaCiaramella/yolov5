@@ -279,7 +279,17 @@ i = False
 # file.close()
 # print(new['weight_file'])
 
-import datetime
-print(datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss-%fmics") )
-im = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized\vlcsnap-2021-02-11-10h35m44s403.jpg'
-shutil.copy(im, os.path.join('./', datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss-%fmics")+'_original.jpg'))
+# import datetime
+# print(datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss-%fmics") )
+# im = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized\vlcsnap-2021-02-11-10h35m44s403.jpg'
+# shutil.copy(im, os.path.join('./', datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss-%fmics")+'_original.jpg'))
+
+# pip install --trusted-host pypi.python.org moviepy
+# pip install imageio-ffmpeg
+
+from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
+start_time = 3*60+35#'03:35'
+end_time= 3*60+45 #'13:00'
+input_video = r'F:\VivaDrive\v3d\detect_e2e_video\OB300-PTZ-Camera.MPG'
+output_video = r'F:\VivaDrive\v3d\detect_e2e_video\OB300-PTZ-Camera_cut.MPG'
+ffmpeg_extract_subclip(input_video, start_time, end_time, targetname=output_video)
