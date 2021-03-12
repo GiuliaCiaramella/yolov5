@@ -251,6 +251,10 @@ if __name__ == '__main__':
     weights = [os.path.join(wp, i) for i in os.listdir(wp) if i.endswith('pt')]  # * means all if need specific format then *.csv
     weight = max(weights, key=os.path.getctime) # take the last weight
 
+    # read conf lower limit adn img size of inference
+    conf_th = current_yaml['detection_conf']
+    size = current_yaml['detection_im_size']
+
     # How does the detector choose? goes on a video and press 'detect' or run detect and select the video?
     # source = r'F:\VivaDrive\v3d\fragmented_video_drone\pressure vessel\061_0038.mov'
     # source = r'C:\Users\Giulia Ciaramella\Desktop\v3d\cut-videos-ai\01_3internalc_360p.MOV'
@@ -261,8 +265,8 @@ if __name__ == '__main__':
             print('Sorry but the path does not exist.\n')
         else:
             i = True
-    conf_th = 0.6
-    size = 416
+
+
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--yaml-file', nargs='+', type=str, default=yaml_file)
