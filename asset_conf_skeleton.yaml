@@ -1,0 +1,14 @@
+already_augmented: false
+detection_conf: 0.6
+detection_im_size: 416
+batch_size: 64
+epochs: 100
+feat_vec_path: None
+img_size_test: 640
+img_size_tr: 640
+names: None
+nc: 0
+test: None
+train: None
+val: None
+weight_file_path: None
