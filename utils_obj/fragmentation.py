@@ -25,7 +25,7 @@ def fragment_video(video_path, frame_rate=1):
         passes = 0
         cap = cv2.VideoCapture(video_path)
         max_pass = 600
-        # print(cap.get(cv2.CAP_PROP_FRAME_COUNT)) # / cap.get(cv2.CAP_PROP_FPS)
+        print(cap.get(cv2.CAP_PROP_FRAME_COUNT)) # / cap.get(cv2.CAP_PROP_FPS)
         prev = 0
         i = -1
         while cap.isOpened():
