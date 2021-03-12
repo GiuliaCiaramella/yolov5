@@ -13,3 +13,5 @@ train: None
 val: None
 weight_file_path: None
 wfile_path_freezing_layer: None
+retrain_im_th: 500 # threshold that the folder of images needs to overcome in order to be added in the train
+temp_tr_data_path: None # path to images temp stored, waiting to reach retrain_im_th to be put in the training set
