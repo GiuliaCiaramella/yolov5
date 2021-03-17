@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import argparse
-import codecs
-import distutils.spawn
+
 import os.path
 import platform
-import re
 import sys
 import subprocess
-from pathlib import Path
+
 
 from functools import partial
-from collections import defaultdict
 
-from utils_obj.fragmentation import fragment_video
 
 try:
     from PyQt5.QtGui import *
@@ -1511,6 +1507,9 @@ class MainWindow(QMainWindow, WindowMixin):
         #             else:
         #                 self.labelHist.append(line)
         st = predefClassesFile
+        print(st)
+        print(type(st))
+        st= str(st)
         s = st.replace("'", '')
         s = s.replace("[", '')
         s = s.replace("]", '')
@@ -1617,61 +1616,16 @@ def get_main_app_new(argv=[]):
     app.setWindowIcon(newIcon("app"))
     # Tzutalin 201705+: Accept extra agruments to change predefined class file
 
-    general_conf = r'C:\Users\Giulia Ciaramella\PycharmProjects\E2E\general_conf.yaml'
-    with open(general_conf) as file:
-        d = yaml.full_load(file)
-    file.close()
 
-    assets = d['assets']
-    i = False
-    while not i:
-        value = input("Please choose an asset. You can choose among: \n %r \n " % "   ".join(
-            map(str, assets.keys())))
-        if value not in list(assets.keys()):
-            print('Error!The asset you chose is not in the list.')
-        else:
-            i = True
-
-    # read the path for the proper yaml file
-    yaml_file = assets[value]
-    with open(yaml_file) as file:
-        current_yaml = yaml.full_load(file)
-    file.close()
-
-    class_names = current_yaml['names']
-    print("For this asset you can label the following objects: %r \n " % "   ".join(
-        map(str, class_names)))
-
-    p = ''
-    i = False
-    while not i:
-        img_path = input("Please insert folder path of images or video to label: \n")
-        # if you drop the folder in prompt, there are " " that impedes the program to read the string as a path.
-        img_path = img_path.replace('"', '')
-        p  = Path(img_path)
-        if not os.path.exists(p ):
-            print('Error! This path does not exists. Give an existing path.')
-        else:
-            video_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv','mkv']  # acceptable video suffixes
-            if str(p).split('.')[-1].lower() in video_formats:
-                print('Started extraction of frames from video. This could take a while...')
-                fpath = fragment_video(p)
-                p = fpath
-            i = True
-
-    print('Thank you! Now before labeling, I will remove images too similar. Just a moment...')
-    feat_vec_path = current_yaml['feat_vec_path']
-    remove_sim(feat_vec_path, p, create_feat=True)
-
-
-    print('Done. Now lunching labeling..')
+    print('Launching labeling..')
 
     argparser = argparse.ArgumentParser()
-    argparser.add_argument("image_dir", default = p , nargs="?")
-    argparser.add_argument("predefined_classes_file", default=str(class_names), nargs="?" )
-    argparser.add_argument("save_dir", default = str(p) , nargs="?")
-
-    args = argparser.parse_args(argv[1:])
+    argparser.add_argument("--image_dir" , nargs="?")
+    argparser.add_argument("--predefined_classes_file", nargs="?" )
+    argparser.add_argument("--save_dir", nargs="?")
+    argparser.parse_args()
+    args = argparser.parse_args(argv[0:])
+    print(args)
     # Usage : labelImg.py image predefClassFile saveDir
     win = MainWindow(args.image_dir,
                      args.predefined_classes_file,

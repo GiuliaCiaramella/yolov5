@@ -33,6 +33,8 @@ class Tracker(object):
         self.max_fr_deregister = int(fps)
 
     def update(self, nbox, bbox, cl, current_frame):
+        # new detection comes
+
         self.current_frame = current_frame
         self.current_obj.nbox = nbox #  xywh normalized
         self.current_obj.bbox = bbox # xyxy not normalized
@@ -40,6 +42,7 @@ class Tracker(object):
         self.current_obj.label = self.inv_classes[cl]  # nozzle, pipe ..
         self.current_obj.centroid = (nbox[0], nbox[1]) #self.evaluate_centroid() # to evaluate centroids starting from nbox
 
+        # process the input
         return self.process()
 
     def process(self):
@@ -52,13 +55,13 @@ class Tracker(object):
                 # update the object we already have in list of active detection
                 self.current_obj.id = lowest_distance.id # just for printing
                 self.update_old(lowest_distance)
-                self.prev_dist[self.current_obj.label].append(lowest_distance.dist)
+                # self.prev_dist[self.current_obj.label].append(lowest_distance.dist)
             else:
                 # other objects are not at min dist: new obj
                 self.update_field()
         id = self.current_obj.id
         self.current_obj = Obj.Obj()  # clear object for next assignation
-        self.deregister() # era qui
+        self.deregister() # deregister all objects absent for more than a threshold
         return id
 
     def update_old(self, old):

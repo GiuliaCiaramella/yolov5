@@ -288,8 +288,41 @@ i = False
 # pip install imageio-ffmpeg
 
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
-start_time = 3*60+35#'03:35'
-end_time= 3*60+45 #'13:00'
-input_video = r'F:\VivaDrive\v3d\detect_e2e_video\OB300-PTZ-Camera.MPG'
-output_video = r'F:\VivaDrive\v3d\detect_e2e_video\OB300-PTZ-Camera_cut.MPG'
-ffmpeg_extract_subclip(input_video, start_time, end_time, targetname=output_video)
+start_time = 1*60+4#'01:04'
+end_time= 1*60+9 #'01:34'
+input_video = r'F:\VivaDrive\v3d\detect_e2e_video\079_0056.MOV'
+output_video = r'F:\VivaDrive\v3d\detect_e2e_video\079_0056_cut_5.MOV'
+# ffmpeg_extract_subclip(input_video, start_time, end_time, targetname=output_video)
+
+from pathlib import Path
+label_img_path = '../utils/labelImg-master/labelImg_after_detection.py'
+classes_="nozzle, pipes, int const"
+
+img_dir = '../runs/detect/exp40_'
+# os.system('python %s  --image_dir %r --predefined_classes_file %r  --save_dir  %r ' %(label_img_path, img_dir, classes_, img_dir))
+os.system('python ' + label_img_path + ' --image_dir {'+img_dir+'}'
+                                              ' --predefined_classes_file {'+classes_+'}' 
+                                              ' --save_dir{'+img_dir+'}"')
+
+
+
+
+# source = r'C:\Users\Giulia Ciaramella\Desktop\v3d\cut-videos-ai\02_1_3noz_1internal.mp4'
+# cap = cv2.VideoCapture(source)
+# tot_frames = cv2.CAP_PROP_FRAME_COUNT
+# fps = cap.get(cv2.CAP_PROP_FPS)
+# cap.release()
+#
+# starting_point = '00:02'
+# ending_point = '00:05'
+#
+# # transform in frames
+# sp_m, sp_s = starting_point.split(':')
+# st_sec = int(sp_m)*60 + int(sp_s)
+# starting_frame = int(fps*st_sec)
+#
+# ep_m, ep_s = ending_point.split(':')
+# et_sec = int(ep_m) * 60 + int(ep_s)
+# ending_frame = int(fps * et_sec)
+#
+# print(starting_frame, ending_frame)

@@ -215,6 +215,7 @@ class Sim(object):
         with open(yaml_file, 'r') as f:
             self.d = yaml.full_load(f)
         f.close()
+        self.save_new_img_path = self.d['temp_tr_data_path']
         vectors = self.d['feat_vec_path']
         self.data = get_feat_vec_data(vectors).copy()
         self.added = {} # image path: vector, so it's easier at teh end copy only the images actually labeled
@@ -233,7 +234,7 @@ class Sim(object):
     def new_im(self, im, frame):
         """
         vectorize image and check similarity
-        if similar, don't do nothing, else put vector in matrix of vectors and in dict of im:vec, and copy image in temp_pic
+        if similar, do nothing, else put vector in matrix of vectors and in dict of im:vec, and copy image in temp_pic
         """
         res = 'sim'
         self.current_frame = frame
@@ -251,7 +252,6 @@ class Sim(object):
                 if similar:
                     self.last_simil = frame
                     self.skip += 3
-                    # print('sim')
                     # if images are similar, increase the skipping, because is very probable that next frames are similar
                     # and I don't want to see it (I want to save resources)
                 else:
@@ -267,17 +267,13 @@ class Sim(object):
         return(res)
 
     def save_detection(self, det):
-        # for *xyxy, conf, cls in reversed(det):
-        #     # xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-        #     line = (cls, *xyxy)   # label format
-        #     with open(self.new_temp_path[:-4] + '.txt', 'a') as f:
-        #         f.write(('%g ' * len(line)).rstrip() % line + '\n')
-
+        # we need to save this detection in case the inspector wants to label them.
         lines = np.matrix(det)
         with open(self.new_temp_path[:-4] + '.txt', 'wb') as f:
             for line in lines:
                 np.savetxt(f, line, fmt='%.2f')
             f.close()
+        self.new_temp_path = ''
 
 
 
@@ -314,8 +310,20 @@ class Sim(object):
 
         # TODO:
         # call the labeling here. Specify in which folder you want to save images and labels.
-        # this needs to be read in the yaml file: current_yaml['temp_pic']
-        # the vector of the labeled images needs to be added in the feature vector of the training.
+        # this is read in the yaml file. in the init it is stored as: self.save_new_img_path = self.d['temp_tr_data_path']
+        # append the vector of images in the feat_vector txt file
+        # the vector of the labeled images needs to be added in the feature vector of the training!
+        labelImg_tool = r'"C:\Users\Giulia Ciaramella\PycharmProjects\yolov5\utils\labelImg-master\labelImg_after_detection.py"'
+        os.system('python ' + labelImg_tool + '--image_dir {'+self.temp_pic+'}'
+                                              '--predefined_classes_file {'+str(list(self.classes.keys()))+'}' 
+                                              '--save_dir{'+self.temp_pic+'}"')
+
+        # label_img_path = '../utils/labelImg-master/labelImg_after_detection.py'
+        # classes_ = "['nozzle', 'pipes', 'int const']"
+        #
+        # img_dir = '../runs/detect/exp40_'
+        # os.system('python %s  --image_dir %r --predefined_classes_file %r  --save_dir  %r ' % (
+        # label_img_path, img_dir, classes_, img_dir))
 
 
 if __name__=='__main__':

@@ -177,6 +177,7 @@ class LoadImages:  # for inference
                     ret_val, img0 = self.cap.read()
 
             self.frame += 1
+
             #print(f'video {self.count + 1}/{self.nf} ({self.frame}/{self.nframes}) {path}: ', end='')
 
         else:
@@ -304,7 +305,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             n += 1
             # _, self.imgs[index] = cap.read()
             cap.grab()
-            if n == 4:  # read every 4th frame
+            if n == 1:  # n == 4 read every 4th frame ---> changed to n==1
                 _, self.imgs[index] = cap.retrieve()
                 n = 0
             time.sleep(0.01)  # wait time

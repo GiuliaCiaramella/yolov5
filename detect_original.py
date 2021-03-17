@@ -6,6 +6,8 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
+import yaml
+import os
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
@@ -80,6 +82,7 @@ def detect(save_img=False):
             pred = apply_classifier(pred, modelc, img, im0s)
 
         # Process detections
+        print(pred)
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
                 p, s, im0, frame = path[i], '%g: ' % i, im0s[i].copy(), dataset.count
@@ -113,7 +116,7 @@ def detect(save_img=False):
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
             # Print time (inference + NMS)
-            print(f'{s}Done. ({t2 - t1:.3f}s)')
+         #   print(f'{s}Done. ({t2 - t1:.3f}s)')
 
             # Stream results
             if view_img:
@@ -135,6 +138,10 @@ def detect(save_img=False):
                         h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
                     vid_writer.write(im0)
+            #res = cv2.resize(im0, (416, 416))
+            # cv2.imshow('frame', res)
+            cv2.imshow('frame', im0)
+            cv2.waitKey(1)
 
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
@@ -146,18 +153,90 @@ def detect(save_img=False):
 if __name__ == '__main__':
 
 
-    times = []
 
-    detecting = '1.jpg'#'prova_c.png'
-    weights = 'last (4).pt'
-    confidence_th = 0.5
+    # from general conf, read which assets already exist and detection can be run
+    general_conf = r'C:\Users\Giulia Ciaramella\PycharmProjects\E2E\general_conf.yaml'
+    with open(general_conf) as file:
+        d = yaml.full_load(file)
+    file.close()
 
+    assets = d['assets']
+    i = False
+    while not i:
+        value = input("Please choose an asset. You can choose among: \n \033[1m%r\033[0m \n " % "   ".join(
+            map(str, assets.keys())))
+        if value not in list(assets.keys()):
+            print('\033[91mError!\033[0m The asset you chose is not in the list.')
+        else:
+            i = True
+
+    # read the path for the proper yaml file
+    yaml_file = assets[value]
+    with open(yaml_file) as file:
+        current_yaml = yaml.full_load(file)
+    file.close()
+
+    # once read the proper yaml path, read weight file path
+    wp = current_yaml['weight_file_path']
+    weights = [os.path.join(wp, i) for i in os.listdir(wp) if i.endswith('pt')]  # * means all if need specific format then *.csv
+    weight = max(weights, key=os.path.getctime) # take the last weight
+
+    # read conf lower limit adn img size of inference
+    conf_th = current_yaml['detection_conf']
+    size = current_yaml['detection_im_size']
+
+    # How does the detector choose? goes on a video and press 'detect' or run detect and select the video?
+    # source = r'F:\VivaDrive\v3d\fragmented_video_drone\pressure vessel\061_0038.mov'
+    # source = r'C:\Users\Giulia Ciaramella\Desktop\v3d\cut-videos-ai\01_3internalc_360p.MOV'
+    i = False
+    while not i:
+        source = input("Please select a video to process\n")
+        if not os.path.exists(source):
+            print('Sorry but the path does not exist.\n')
+        else:
+            i = True
+
+    cap = cv2.VideoCapture(source)
+    tot_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    cap.release()
+
+    j = False
+    while not j:
+        cut = input(
+            'Do you want to specify the staring and ending point of the video?\n[This can save time if the recording'
+            'does not start in the interested environment]\n [y] or [n]?\n')
+        if cut.lower() not in ['y', 'n']:
+            print('Not valid input.')
+        elif cut.lower()=='y':
+            starting_point = input('Enter starting point as MM:SS\n')
+            ending_point = input('Enter ending point as MM:SS\n')
+
+            # transform in frames
+            sp_m, sp_s = starting_point.split(':')
+            st_sec = int(sp_m)*60 + int(sp_s)
+            starting_frame = int(fps*st_sec)+1
+
+            ep_m, ep_s = ending_point.split(':')
+            et_sec = int(ep_m) * 60 + int(ep_s)
+            ending_frame = int(fps * et_sec)
+            j = True
+        elif cut.lower()== 'n':
+            starting_frame = 1
+            ending_frame = tot_frames
+            j = True
+
+    print(starting_frame, ending_frame)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default=weights, help='model.pt path(s)')
-    parser.add_argument('--source', type=str, default=detecting, help='source')  # file/folder, 0 for webcam
-    parser.add_argument('--img-size', type=int, default=416, help='inference size (pixels)')
-    parser.add_argument('--conf-thres', type=float, default=confidence_th, help='object confidence threshold')
+    parser.add_argument('--yaml-file', nargs='+', type=str, default=yaml_file)
+    parser.add_argument('--start_frame', nargs='+', type=str, default=starting_frame, help='first frame')
+    parser.add_argument('--end_frame', nargs='+', type=str, default=ending_frame, help='first frame')
+
+    parser.add_argument('--weights', nargs='+', type=str, default=weight, help='model.pt path(s)')
+    parser.add_argument('--source', type=str, default=source, help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--img-size', type=int, default=size, help='inference size (pixels)')
+    parser.add_argument('--conf-thres', type=float, default=conf_th, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='display results')
@@ -174,16 +253,31 @@ if __name__ == '__main__':
     print(opt)
     check_requirements()
 
+    times = []
     with torch.no_grad():
         if opt.update:  # update all models (to fix SourceChangeWarning)
             for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
                 detect()
                 strip_optimizer(opt.weights)
         else:
-            for i in range(500):
-                t0 = time.time()
-                detect()
-                times.append(time.time()-t0)
-            # print(f'Done. ({time.time() - t0:.3f}s)')
-    print('mean time', np.mean(times))
-    print('std time', np.std(times))
+            # detect()
+            import cProfile
+            # cProfile.run('detect()', 'restats')
+            import pstats
+            from pstats import SortKey
+            import io
+
+            pr = cProfile.Profile()
+            pr.enable()
+            my_res = detect()
+            pr.disable()
+
+            result = io.StringIO()
+            p = pstats.Stats(pr, stream=result).sort_stats(SortKey.CUMULATIVE)
+            p.print_stats()
+
+            name = os.path.basename(Path(source)).split('.')[0]
+            with open(name + '_orig.txt', 'w+') as f:
+                f.write(result.getvalue())
+            f.close()
+

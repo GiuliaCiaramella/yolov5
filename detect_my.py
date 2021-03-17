@@ -5,7 +5,6 @@ import argparse
 import time
 from pathlib import Path
 import cv2
-# cv2.namedWindow('detection', cv2.WINDOW_AUTOSIZE)
 import torch
 import warnings
 import torch.backends.cudnn as cudnn
@@ -18,7 +17,7 @@ from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 from progress.bar import Bar
 
-from utils_obj.im_sim import Sim
+from utils_obj.im_sim import Sim # qui
 from utils_obj.obj_tracker import Tracker
 
 warnings.filterwarnings(action='ignore')
@@ -39,7 +38,7 @@ def detect(save_img=False):
 
     # initialize Tracker and sim
     tracker = Tracker(yaml_file) # yaml file to read classes
-    sim = Sim(yaml_file=yaml_file)
+    sim = Sim(yaml_file=yaml_file) # qui
 
     # Directories
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
@@ -82,13 +81,14 @@ def detect(save_img=False):
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
     i = 0
+    f = 0
     with Bar('detection...', max=dataset.nframes) as bar:
         for path, img, im0s, vid_cap in dataset:
             fps = vid_cap.get(cv2.CAP_PROP_FPS)
             # pass info to tracker
             if i == 0:
                 tracker.info(fps = fps, save_dir = save_dir)
-                sim.info(fps = fps, save_dir = save_dir)
+                sim.info(fps = fps, save_dir = save_dir) # qui
                 i=1
 
             img = torch.from_numpy(img).to(device)
@@ -98,123 +98,114 @@ def detect(save_img=False):
                 img = img.unsqueeze(0)
 
             # Inference
-            t1 = time_synchronized()
+            # t1 = time_synchronized()
             if dataset.frame >= start_frame and dataset.frame<end_frame : # first frame is
                 pred = model(img, augment=opt.augment)[0]
 
                 # Apply NMS
                 pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
-                t2 = time_synchronized()
+                # t2 = time_synchronized()
 
                 # Apply Classifier
                 if classify:
                     pred = apply_classifier(pred, modelc, img, im0s)
 
             else:
-                pred = []
+                f+=1
+                pred = [torch.Tensor([])]
 
-            # Process detections
-            if not pred:
-                p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
-                r = cv2.resize(im0, (416, 416))
-                cv2.imshow('frame', r)
-                cv2.waitKey(1)
-            else:
-                for i, det in enumerate(pred):  # detections per image
-                    if webcam:  # batch_size >= 1
-                        p, s, im0, frame = path[i], '%g: ' % i, im0s[i].copy(), dataset.count
-                    else:
-                        p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
+            for i, det in enumerate(pred):  # detections per image
+                if webcam:  # batch_size >= 1
+                    p, s, im0, frame = path[i], '%g: ' % i, im0s[i].copy(), dataset.count
+                else:
+                    p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
 
-                    p = Path(p)  # to Path
-                    save_path = str(save_dir / p.name)  # img.jpg
-                    txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
-                    s += '%gx%g ' % img.shape[2:]  # print string
-                    gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+                p = Path(p)  # to Path
+                save_path = str(save_dir / p.name)  # img.jpg
+                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
+                s += '%gx%g ' % img.shape[2:]  # print string
+                gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
 
+
+                if len(det):
+                    # Rescale boxes from img_size to im0 size
+                    det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+
+                    # Print results
+                    for c in det[:, -1].unique():
+                        n = (det[:, -1] == c).sum()  # detections per class
+                        s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+
+                    ## blocco qui
+                    # if s_ == 'not_sim':
+                    #     lines = []
+                    #     for *xyxy, conf, cls in reversed(det):
+                    #         l = []
+                    #         nbox = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    #         l = [int(cls.item())] + nbox
+                    #         # l.append(i for i in xywh)
+                    #         lines.append(l)
+                    #     sim.save_detection(lines)
+
+                    # Write results
+                    lines = [] # to write results in txt if images are not similar
+                    for *xyxy, conf, cls in reversed(det):
+                        #xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+
+                        # take proprieties from the detection
+                        nbox = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # xywh in normalized form
+                        cl = int(cls.item())
+                        bbox = torch.tensor(xyxy).view(1, 4)[0].tolist()
+                        # pass proprieties to Tracker
+                        id = tracker.update(nbox, bbox, cl, frame) # object put into the tracker
+
+                        l = [int(cls.item())] + nbox
+                        lines.append(l)
+
+                        if save_img or view_img:  # Add bbox to image
+                            label = f'{names[int(cls)]} {conf:.2f}'
+                            plot_one_box(xyxy, im0, objectID = id,  label=label, color=colors[int(cls)], line_thickness=3) # label=label
+
+                    # save detection in case the inspector wants to label the suggested images
                     # pass image to check similatiry
                     # can return 'sim' or 'not_sim'. If not_sim, we want to retrieve the detection too
-                    s_ = sim.new_im(im0, frame)
+                    s_ = sim.new_im(im0, frame)  # qui
+                    if s_ == 'not_sim':
+                        sim.save_detection(lines)
 
-                    if len(det):
-                        # Rescale boxes from img_size to im0 size
-                        det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+                # Stream results
+                # if view_img:
+                #     cv2.imshow(str(p), im0)
 
-                        # Print results
-                        for c in det[:, -1].unique():
-                            n = (det[:, -1] == c).sum()  # detections per class
-                            s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+                # Save results frames with detection
+                if save_img:
+                    if dataset.mode == 'image':
+                        cv2.imwrite(save_path, im0)
+                    else:  # 'video'
+                        if vid_path != save_path:  # new video
+                            vid_path = save_path
+                            if isinstance(vid_writer, cv2.VideoWriter):
+                                vid_writer.release()  # release previous video writer
 
-                        if s_ == 'not_sim':
-                            lines = []
-                            for *xyxy, conf, cls in reversed(det):
-                                l = []
-                                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                                l = [int(cls.item())] + xywh
-                                # l.append(i for i in xywh)
-                                lines.append(l)
-                            sim.save_detection(lines)
+                            fourcc = 'mp4v'  # output video codec
+                            #fps = vid_cap.get(cv2.CAP_PROP_FPS)
+                            w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                            h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                            vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
 
-                        # Write results
-                        for *xyxy, conf, cls in reversed(det):
-                            #xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                        vid_writer.write(im0)
+                        res = cv2.resize(im0, (416,416))
+                        cv2.imshow('frame', res)
 
-                            # take proprieties from the detection
-                            nbox = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # xywh in normalized form
-                            cl = int(cls.item())
-                            bbox = torch.tensor(xyxy).view(1, 4)[0].tolist()
+                        # cv2.imshow('frame', im0)
+                        cv2.waitKey(1)
 
-
-                            # pass proprieties to Tracker
-                            start = time.time()
-                            id = tracker.update(nbox, bbox, cl, frame) # object put into the tracker
-                            id_time.append(time.time()-start)
-
-
-
-                            if save_txt:  # Write to file
-                                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                                line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
-                                with open(txt_path + '.txt', 'a') as f:
-                                    f.write(('%g ' * len(line)).rstrip() % line + '\n')
-
-                            if save_img or view_img:  # Add bbox to image
-                                label = f'{names[int(cls)]} {conf:.2f}'
-
-                                plot_one_box(xyxy, im0, objectID = id,  label=label, color=colors[int(cls)], line_thickness=3) # label=label
-
-                    # Stream results
-                    if view_img:
-                        cv2.imshow(str(p), im0)
-
-                    # Save results (image with detections)
-                    if save_img:
-                        if dataset.mode == 'image':
-                            cv2.imwrite(save_path, im0)
-                        else:  # 'video'
-                            if vid_path != save_path:  # new video
-                                vid_path = save_path
-                                if isinstance(vid_writer, cv2.VideoWriter):
-                                    vid_writer.release()  # release previous video writer
-
-                                fourcc = 'mp4v'  # output video codec
-                                #fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                                w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                                h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                                vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
-
-                            vid_writer.write(im0)
-                            res = cv2.resize(im0, (416,416))
-                            cv2.imshow('frame', res)
-                            cv2.waitKey(1)
-
-                            bar.next()
+                        bar.next()
 
 
 
     tracker.print_results()
-   # tracker.dist_analysis()
-    sim.end()
+    sim.end() # qui
 
     if save_txt or save_img:
         #s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
@@ -226,6 +217,7 @@ def detect(save_img=False):
     # print('With variance: ', np.var(id_time))
 
     print(f'Done. ({time.time() - t0:.3f}s)')
+    print(f)
 
 
 
@@ -278,27 +270,33 @@ if __name__ == '__main__':
     cap = cv2.VideoCapture(source)
     tot_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     fps = cap.get(cv2.CAP_PROP_FPS)
+    size = max(cap.get(cv2.CAP_PROP_FRAME_HEIGHT), cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     cap.release()
 
     j = False
     while not j:
         cut = input(
-            'Do you want to specify the staring and ending point of the video?\n[This can save time if the recording'
+            'Do you want to specify the starting and ending point of the video?\n[This can save time if the recording '
             'does not start in the interested environment]\n [y] or [n]?\n')
         if cut.lower() not in ['y', 'n']:
             print('Not valid input.')
         elif cut.lower()=='y':
-            starting_point = input('Enter starting point as MM:SS\n')
-            ending_point = input('Enter ending point as MM:SS\n')
+            starting_point = input('Enter starting point as MM:SS (or "begin" to start from 0)\n')
+            ending_point = input('Enter ending point as MM:SS (or "end" to process till the end)\n')
 
-            # transform in frames
-            sp_m, sp_s = starting_point.split(':')
-            st_sec = int(sp_m)*60 + int(sp_s)
-            starting_frame = int(fps*st_sec)+1
-
-            ep_m, ep_s = ending_point.split(':')
-            et_sec = int(ep_m) * 60 + int(ep_s)
-            ending_frame = int(fps * et_sec)
+            if starting_point == 'begin':
+                starting_frame = 1
+            else:
+                # transform in frames
+                sp_m, sp_s = starting_point.split(':')
+                st_sec = int(sp_m)*60 + int(sp_s)
+                starting_frame = int(fps*st_sec)+1
+            if ending_point == 'end':
+                ending_frame = tot_frames
+            else:
+                ep_m, ep_s = ending_point.split(':')
+                et_sec = int(ep_m) * 60 + int(ep_s)
+                ending_frame = int(fps * et_sec)
             j = True
         elif cut.lower()== 'n':
             starting_frame = 1
@@ -338,7 +336,29 @@ if __name__ == '__main__':
                 detect()
                 strip_optimizer(opt.weights)
         else:
-            detect()
+            # detect()
+            import cProfile
+           # cProfile.run('detect()', 'restats')
+            import pstats
+            from pstats import SortKey
+            import io
+
+            pr = cProfile.Profile()
+            pr.enable()
+            my_res = detect()
+            pr.disable()
+
+            result = io.StringIO()
+            # p = pstats.Stats(pr, stream=result).sort_stats(SortKey.CUMULATIVE)
+            p = pstats.Stats(pr, stream=result).sort_stats(SortKey.TIME)
+
+            p.print_stats()
+
+            name = os.path.basename(Path(source)).split('.')[0]
+            with open(name+'.txt', 'w+') as f:
+                f.write(result.getvalue())
+            f.close()
+
 
 
 

@@ -497,13 +497,13 @@ if __name__ == '__main__':
         if len(temp_tr) - len(tr_data) >= current_yaml['retrain_im_th']:
             p = False
             while not p:
-                retrain = input('This model can be retrain. Do you wish to proceede? [y] or [n] \n')
+                retrain = input('This model can be retrained. Do you wish to proceed? [y] or [n] \n')
                 if retrain.lower() not in ['y', 'n']:
                     print('Input not valid')
                 elif retrain.lower() == 'y':
                         # split
                         # augment (initial_path = current_yaml['temp_tr_data_path'], final_path = current_yaml['train'])
-                        # delete pictures in the temp data
+                        # delete pictures in the temp folder
                         # update feat vectors
                         # pass the freezing layers
                         p = True
