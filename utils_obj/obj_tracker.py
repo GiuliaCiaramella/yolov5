@@ -3,7 +3,6 @@ import yaml
 from utils_obj import obj_creation as Obj
 import numpy as np
 import json
-import csv
 import pandas as pd
 
 def read_classes(yaml_file):
