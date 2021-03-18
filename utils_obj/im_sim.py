@@ -226,7 +226,7 @@ class Sim(object):
 
     def info(self, fps, save_dir):
         self.fps = fps
-        self.temp_pic = str(save_dir)  # './temp_label/'
+        self.temp_pic = str(save_dir)+'/suggested_annot/'  # './temp_label/'
         if not os.path.exists(self.temp_pic):
             os.makedirs(self.temp_pic)
 
@@ -255,6 +255,7 @@ class Sim(object):
                     # if images are similar, increase the skipping, because is very probable that next frames are similar
                     # and I don't want to see it (I want to save resources)
                 else:
+                    # if images are not similar, I want to save the image to a temp folder
                     self.data = np.concatenate((self.data, new_vec))
                     name = datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss-%fmics")+'_original.jpg'
                     self.new_temp_path = os.path.join(self.temp_pic,name)
@@ -266,13 +267,14 @@ class Sim(object):
                     # if images are not similar, reset skip step to 1
         return(res)
 
-    def save_detection(self, det):
+    def save_detection(self, lines):
         # we need to save this detection in case the inspector wants to label them.
-        lines = np.matrix(det)
-        with open(self.new_temp_path[:-4] + '.txt', 'wb') as f:
+
+        with open(self.new_temp_path[:-4] + '.txt', 'a') as f:
             for line in lines:
-                np.savetxt(f, line, fmt='%.2f')
-            f.close()
+                f.write(' '.join(str(i) for i in line))
+                f.write('\n')
+
         self.new_temp_path = ''
 
 
@@ -299,38 +301,47 @@ class Sim(object):
 
     def render_images(self):
         ann = []
-        t = self.temp_pic
-
-        im = [os.path.join(t,i) for i in os.listdir(t) if i.split('.')[-1].lower() in img_formats]
-        im = list(filter(None, im))
-
-        for i in im:
-            image = Image.open(i)
-            image.show()
+        # t = self.temp_pic
+        #
+        # im = [os.path.join(t,i) for i in os.listdir(t) if i.split('.')[-1].lower() in img_formats]
+        # im = list(filter(None, im))
+        #
+        # for i in im:
+        #     image = Image.open(i)
+        #     image.show()
 
         # TODO:
         # call the labeling here. Specify in which folder you want to save images and labels.
         # this is read in the yaml file. in the init it is stored as: self.save_new_img_path = self.d['temp_tr_data_path']
         # append the vector of images in the feat_vector txt file
         # the vector of the labeled images needs to be added in the feature vector of the training!
-        labelImg_tool = r'"C:\Users\Giulia Ciaramella\PycharmProjects\yolov5\utils\labelImg-master\labelImg_after_detection.py"'
-        os.system('python ' + labelImg_tool + '--image_dir {'+self.temp_pic+'}'
-                                              '--predefined_classes_file {'+str(list(self.classes.keys()))+'}' 
-                                              '--save_dir{'+self.temp_pic+'}"')
+        import subprocess
 
-        # label_img_path = '../utils/labelImg-master/labelImg_after_detection.py'
-        # classes_ = "['nozzle', 'pipes', 'int const']"
-        #
-        # img_dir = '../runs/detect/exp40_'
-        # os.system('python %s  --image_dir %r --predefined_classes_file %r  --save_dir  %r ' % (
-        # label_img_path, img_dir, classes_, img_dir))
+        img_dir = os.path.abspath(self.temp_pic)
+        label_tool_path = os.path.abspath('utils/labelImg-master/labelImg_after_detection.py')
+        classes = list(self.classes.keys())
+        # create txt in the same folder
+
+        with open(img_dir + '/classes.txt', 'a') as f:
+            for line in classes:
+                f.write(line + '\n')
+            f.close()
+
+        label_tool_path = '"' + label_tool_path + '"'
+        img_dir = '"' + img_dir + '"'
+        import subprocess
+        cmd = 'python ' + label_tool_path + \
+              ' --image_dir ' + img_dir + \
+              ' --save_dir ' + img_dir
+        # ' --predefined_classes_file '+classes+ \
+        s = subprocess.call(cmd, shell=True)
 
 
 if __name__=='__main__':
-
+    pass
     # path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized\feat_vectors.txt'
-    feat_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\image_divers\not copied\feat_vectors.txt'
-    im_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\image_divers\not copied'
+    # feat_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\image_divers\not copied\feat_vectors.txt'
+    # im_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\image_divers\not copied'
     # remove_sim(feat_path, im_path, create_feat=True)
 
     # a = np.full((3,3), 3)

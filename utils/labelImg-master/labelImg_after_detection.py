@@ -1583,28 +1583,28 @@ def read(filename, default=None):
         return default
 
 
-def get_main_app(argv=[]):
-    """
-    Standard boilerplate Qt application code.
-    Do everything but app.exec_() -- so that we can test the application in one thread
-    """
-    app = QApplication(argv)
-    app.setApplicationName(__appname__)
-    app.setWindowIcon(newIcon("app"))
-    # Tzutalin 201705+: Accept extra agruments to change predefined class file
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument("image_dir", nargs="?")
-    argparser.add_argument("predefined_classes_file",
-                           default=os.path.join(os.path.dirname(__file__), "data", "predefined_classes.txt"),
-                           nargs="?")
-    argparser.add_argument("save_dir", nargs="?")
-    args = argparser.parse_args(argv[1:])
-    # Usage : labelImg.py image predefClassFile saveDir
-    win = MainWindow(args.image_dir,
-                     args.predefined_classes_file,
-                     args.save_dir)
-    win.show()
-    return app, win
+# def get_main_app(argv=[]):
+#     """
+#     Standard boilerplate Qt application code.
+#     Do everything but app.exec_() -- so that we can test the application in one thread
+#     """
+#     app = QApplication(argv)
+#     app.setApplicationName(__appname__)
+#     app.setWindowIcon(newIcon("app"))
+#     # Tzutalin 201705+: Accept extra agruments to change predefined class file
+#     argparser = argparse.ArgumentParser()
+#     argparser.add_argument("image_dir", nargs="?")
+#     argparser.add_argument("predefined_classes_file",
+#                            default=os.path.join(os.path.dirname(__file__), "data", "predefined_classes.txt"),
+#                            nargs="?")
+#     argparser.add_argument("save_dir", nargs="?")
+#     args = argparser.parse_args(argv[1:])
+#     # Usage : labelImg.py image predefClassFile saveDir
+#     win = MainWindow(args.image_dir,
+#                      args.predefined_classes_file,
+#                      args.save_dir)
+#     win.show()
+#     return app, win
 
 def get_main_app_new(argv=[]):
     """
@@ -1621,14 +1621,14 @@ def get_main_app_new(argv=[]):
 
     argparser = argparse.ArgumentParser()
     argparser.add_argument("--image_dir" , nargs="?")
-    argparser.add_argument("--predefined_classes_file", nargs="?" )
+    # argparser.add_argument("--predefined_classes_file", nargs="?" )
     argparser.add_argument("--save_dir", nargs="?")
     argparser.parse_args()
-    args = argparser.parse_args(argv[0:])
+    args = argparser.parse_args()
     print(args)
     # Usage : labelImg.py image predefClassFile saveDir
     win = MainWindow(args.image_dir,
-                     args.predefined_classes_file,
+                     # args.predefined_classes_file,
                      args.save_dir)
     win.show()
     return app, win
