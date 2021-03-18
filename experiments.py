@@ -288,21 +288,55 @@ i = False
 # pip install imageio-ffmpeg
 
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
-start_time = 1*60+4#'01:04'
-end_time= 1*60+9 #'01:34'
-input_video = r'F:\VivaDrive\v3d\detect_e2e_video\079_0056.MOV'
-output_video = r'F:\VivaDrive\v3d\detect_e2e_video\079_0056_cut_5.MOV'
+# start_time = 0#'01:04'
+# end_time= 10 #'01:34'
+# input_video = r'F:\VivaDrive\v3d\fragmented_video_drone\pressure vessel\061_0038.MOV'
+# output_video = r'F:\VivaDrive\v3d\fragmented_video_drone\pressure vessel\061_0038_cut_10.MOV'
 # ffmpeg_extract_subclip(input_video, start_time, end_time, targetname=output_video)
 
-from pathlib import Path
-label_img_path = '../utils/labelImg-master/labelImg_after_detection.py'
-classes_="nozzle, pipes, int const"
 
-img_dir = '../runs/detect/exp40_'
-# os.system('python %s  --image_dir %r --predefined_classes_file %r  --save_dir  %r ' %(label_img_path, img_dir, classes_, img_dir))
-os.system('python ' + label_img_path + ' --image_dir {'+img_dir+'}'
-                                              ' --predefined_classes_file {'+classes_+'}' 
-                                              ' --save_dir{'+img_dir+'}"')
+
+
+import glob
+import cv2
+
+img_dir = os.path.abspath('../runs/detect/exp/suggested_annot')
+label_tool_path = os.path.abspath('../utils/labelImg-master/labelImg_after_detection.py')
+
+c = {'nozzles':0, 'pipes':0}
+
+
+lines = [[1, 0.6868489384651184, 0.21898147463798523, 0.04401041567325592, 0.10000000149011612],
+         [1, 0.6868489384651184, 0.21898147463798523, 0.04401041567325592, 0.10000000149011612]]
+
+with open(img_dir+ '/one.txt', 'a') as f:
+    for line in lines:
+        f.write(' '.join(str(i) for i in line))
+        f.write('\n')
+
+# for i in glob.glob(img_dir+'/*.jpg'):
+#     print(i)
+#     img = cv2.imread(i)
+#     print(img.size)
+#     img = cv2.resize(src=img, dsize=(416,416))
+#     cv2.imwrite(i, img)
+#
+
+
+classes_="[nozzle, pipes, int const]"
+# img_dir = os.path.abspath('../immage_diff/original_similar')
+
+
+label_tool_path = '"'+label_tool_path+'"'
+img_dir = '"'+img_dir+'"'
+import subprocess
+cmd = 'python ' +label_tool_path+\
+      ' --image_dir '+img_dir+ \
+      ' --predefined_classes_file "[nozzle, pipes, int const]"' \
+      ' --save_dir '+ img_dir
+# s = subprocess.call(cmd, shell=True)
+
+
 
 
 
