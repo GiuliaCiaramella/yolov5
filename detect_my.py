@@ -34,7 +34,6 @@ def detect(save_img=False):
         ('rtsp://', 'rtmp://', 'http://'))
 
 
-    id_time = []
 
     # initialize Tracker and sim
     tracker = Tracker(yaml_file) # yaml file to read classes
@@ -125,7 +124,7 @@ def detect(save_img=False):
                 txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
                 s += '%gx%g ' % img.shape[2:]  # print string
                 gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-
+                clean_im = im0.copy()
 
                 if len(det):
                     # Rescale boxes from img_size to im0 size
@@ -136,18 +135,8 @@ def detect(save_img=False):
                         n = (det[:, -1] == c).sum()  # detections per class
                         s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
-                    ## blocco qui
-                    # if s_ == 'not_sim':
-                    #     lines = []
-                    #     for *xyxy, conf, cls in reversed(det):
-                    #         l = []
-                    #         nbox = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                    #         l = [int(cls.item())] + nbox
-                    #         # l.append(i for i in xywh)
-                    #         lines.append(l)
-                    #     sim.save_detection(lines)
-
                     # Write results
+                    l = []
                     lines = [] # to write results in txt if images are not similar
                     for *xyxy, conf, cls in reversed(det):
                         #xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
@@ -169,13 +158,9 @@ def detect(save_img=False):
                     # save detection in case the inspector wants to label the suggested images
                     # pass image to check similatiry
                     # can return 'sim' or 'not_sim'. If not_sim, we want to retrieve the detection too
-                    s_ = sim.new_im(im0, frame)  # qui
+                    s_ = sim.new_im(clean_im, frame)  # qui
                     if s_ == 'not_sim':
                         sim.save_detection(lines)
-
-                # Stream results
-                # if view_img:
-                #     cv2.imshow(str(p), im0)
 
                 # Save results frames with detection
                 if save_img:
@@ -188,19 +173,18 @@ def detect(save_img=False):
                                 vid_writer.release()  # release previous video writer
 
                             fourcc = 'mp4v'  # output video codec
-                            #fps = vid_cap.get(cv2.CAP_PROP_FPS)
                             w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                             h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                             vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
 
                         vid_writer.write(im0)
-                        res = cv2.resize(im0, (416,416))
-                        cv2.imshow('frame', res)
+                        # res = cv2.resize(im0, (416,416))
+                        # cv2.imshow('frame', res)
 
                         # cv2.imshow('frame', im0)
                         cv2.waitKey(1)
 
-                        bar.next()
+            bar.next()
 
 
 
@@ -208,8 +192,6 @@ def detect(save_img=False):
     sim.end() # qui
 
     if save_txt or save_img:
-        #s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-        # print(f"Results saved to {save_dir}{s}")
         print(f"Results saved to {save_dir}")
 
 
@@ -270,7 +252,7 @@ if __name__ == '__main__':
     cap = cv2.VideoCapture(source)
     tot_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     fps = cap.get(cv2.CAP_PROP_FPS)
-    size = max(cap.get(cv2.CAP_PROP_FRAME_HEIGHT), cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    # size = max(cap.get(cv2.CAP_PROP_FRAME_HEIGHT), cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     cap.release()
 
     j = False
@@ -338,10 +320,10 @@ if __name__ == '__main__':
         else:
             # detect()
             import cProfile
-           # cProfile.run('detect()', 'restats')
             import pstats
             from pstats import SortKey
             import io
+            import datetime
 
             pr = cProfile.Profile()
             pr.enable()
@@ -349,13 +331,13 @@ if __name__ == '__main__':
             pr.disable()
 
             result = io.StringIO()
-            # p = pstats.Stats(pr, stream=result).sort_stats(SortKey.CUMULATIVE)
-            p = pstats.Stats(pr, stream=result).sort_stats(SortKey.TIME)
+            p = pstats.Stats(pr, stream=result).sort_stats(SortKey.CUMULATIVE)
+            # p = pstats.Stats(pr, stream=result).sort_stats(SortKey.TIME)
 
             p.print_stats()
 
             name = os.path.basename(Path(source)).split('.')[0]
-            with open(name+'.txt', 'w+') as f:
+            with open(name+'_'+datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss")+'.txt', 'w+') as f:
                 f.write(result.getvalue())
             f.close()
 
