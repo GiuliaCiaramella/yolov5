@@ -300,19 +300,8 @@ from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 import glob
 import cv2
 
-img_dir = os.path.abspath('../runs/detect/exp/suggested_annot')
+img_dir = os.path.abspath('../runs/detect/exp4/suggested_annot')
 label_tool_path = os.path.abspath('../utils/labelImg-master/labelImg_after_detection.py')
-
-c = {'nozzles':0, 'pipes':0}
-
-
-lines = [[1, 0.6868489384651184, 0.21898147463798523, 0.04401041567325592, 0.10000000149011612],
-         [1, 0.6868489384651184, 0.21898147463798523, 0.04401041567325592, 0.10000000149011612]]
-
-with open(img_dir+ '/one.txt', 'a') as f:
-    for line in lines:
-        f.write(' '.join(str(i) for i in line))
-        f.write('\n')
 
 # for i in glob.glob(img_dir+'/*.jpg'):
 #     print(i)
@@ -323,20 +312,22 @@ with open(img_dir+ '/one.txt', 'a') as f:
 #
 
 
-classes_="[nozzle, pipes, int const]"
-# img_dir = os.path.abspath('../immage_diff/original_similar')
+img_dir = os.path.abspath('runs/detect/exp4/suggested_annot')
+predefined_class_file = os.path.abspath('runs/detect/exp4/suggested_annot/classes.txt')
+label_tool_path = os.path.abspath('utils/labelImg-master/labelImg_after_detection.py')
 
+# create txt in the same folder
 
-label_tool_path = '"'+label_tool_path+'"'
-img_dir = '"'+img_dir+'"'
+label_tool_path = '"' + label_tool_path + '"'
+img_dir = '"' + img_dir + '"'
+predefined_class_file = '"'+ predefined_class_file + '"'
 import subprocess
-cmd = 'python ' +label_tool_path+\
-      ' --image_dir '+img_dir+ \
-      ' --predefined_classes_file "[nozzle, pipes, int const]"' \
-      ' --save_dir '+ img_dir
-# s = subprocess.call(cmd, shell=True)
 
-
+cmd = 'python ' + label_tool_path + \
+      ' --image_dir ' + img_dir + \
+      ' --save_dir ' + img_dir + \
+      ' --predefined_classes_file '+ predefined_class_file
+s = subprocess.call(cmd, shell=True)
 
 
 

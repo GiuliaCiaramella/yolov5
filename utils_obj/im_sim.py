@@ -319,12 +319,12 @@ class Sim(object):
 
         img_dir = os.path.abspath(self.temp_pic)
         label_tool_path = os.path.abspath('utils/labelImg-master/labelImg_after_detection.py')
-        classes = list(self.classes.keys())
+
         # create txt in the same folder
 
-        with open(img_dir + '/classes.txt', 'a') as f:
-            for line in classes:
-                f.write(line + '\n')
+        with open(img_dir + '/classes.txt', 'w') as f:
+            for c in self.classes.keys():
+                f.write(c + '\n')
             f.close()
 
         label_tool_path = '"' + label_tool_path + '"'
@@ -332,8 +332,8 @@ class Sim(object):
         import subprocess
         cmd = 'python ' + label_tool_path + \
               ' --image_dir ' + img_dir + \
-              ' --save_dir ' + img_dir
-        # ' --predefined_classes_file '+classes+ \
+              ' --save_dir ' + img_dir + \
+              ' --predefined_classes_file '+ img_dir + '/classes.txt'
         s = subprocess.call(cmd, shell=True)
 
 
