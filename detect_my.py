@@ -1,4 +1,4 @@
-
+import matplotlib.pyplot as plt
 import yaml
 import os
 import argparse
@@ -17,7 +17,7 @@ from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 from progress.bar import Bar
 
-from utils_obj.im_sim import Sim # qui
+# from utils_obj.im_sim import Sim # qui
 from utils_obj.obj_tracker import Tracker
 
 warnings.filterwarnings(action='ignore')
@@ -37,7 +37,7 @@ def detect(save_img=False):
 
     # initialize Tracker and sim
     tracker = Tracker(yaml_file) # yaml file to read classes
-    sim = Sim(yaml_file=yaml_file) # qui
+    # sim = Sim(yaml_file=yaml_file) # qui
 
     # Directories
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
@@ -50,16 +50,17 @@ def detect(save_img=False):
 
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
+    model_feat = attempt_load(weights, map_location=device)
     stride = int(model.stride.max())  # model stride
     imgsz = check_img_size(imgsz, s=stride)  # check img_size
     if half:
         model.half()  # to FP16
 
     # Second-stage classifier
-    classify = False
-    if classify:
-        modelc = load_classifier(name='resnet101', n=2)  # initialize
-        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
+    # classify = False
+    # if classify:
+    #     modelc = load_classifier(name='resnet101', n=2)  # initialize
+    #     modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
 
     # Set Dataloader
     vid_path, vid_writer = None, None
@@ -87,7 +88,7 @@ def detect(save_img=False):
             # pass info to tracker
             if i == 0:
                 tracker.info(fps = fps, save_dir = save_dir)
-                sim.info(fps = fps, save_dir = save_dir) # qui
+                # sim.info(fps = fps, save_dir = save_dir) # qui
                 i=1
 
             img = torch.from_numpy(img).to(device)
@@ -99,15 +100,17 @@ def detect(save_img=False):
             # Inference
             # t1 = time_synchronized()
             if dataset.frame >= start_frame and dataset.frame<end_frame : # first frame is
+                pred_total = model(img, augment=opt.augment)
                 pred = model(img, augment=opt.augment)[0]
+
 
                 # Apply NMS
                 pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
                 # t2 = time_synchronized()
 
-                # Apply Classifier
-                if classify:
-                    pred = apply_classifier(pred, modelc, img, im0s)
+                # Apply second stage classifier Classifier
+                # if classify:
+                #     pred = apply_classifier(pred, modelc, img, im0s)
 
             else:
                 f+=1
@@ -158,9 +161,9 @@ def detect(save_img=False):
                     # save detection in case the inspector wants to label the suggested images
                     # pass image to check similatiry
                     # can return 'sim' or 'not_sim'. If not_sim, we want to retrieve the detection too
-                    s_ = sim.new_im(clean_im, frame)  # qui
-                    if s_ == 'not_sim':
-                        sim.save_detection(lines)
+                    # s_ = sim.new_im(clean_im, frame)  # qui
+                    # if s_ == 'not_sim':
+                    #     sim.save_detection(lines)
 
                 # Save results frames with detection
                 if save_img:
@@ -189,7 +192,7 @@ def detect(save_img=False):
 
 
     tracker.print_results()
-    sim.end() # qui
+    # sim.end() # qui
 
     if save_txt or save_img:
         print(f"Results saved to {save_dir}")
@@ -295,6 +298,7 @@ if __name__ == '__main__':
     parser.add_argument('--weights', nargs='+', type=str, default=weight, help='model.pt path(s)')
     parser.add_argument('--source', type=str, default=source, help='source')  # file/folder, 0 for webcam
     parser.add_argument('--img-size', type=int, default=size, help='inference size (pixels)')
+
     parser.add_argument('--conf-thres', type=float, default=conf_th, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')

@@ -37,6 +37,7 @@ class Tracker(object):
         self.current_frame = current_frame
         self.current_obj.nbox = nbox #  xywh normalized
         self.current_obj.bbox = bbox # xyxy not normalized
+        # self.current_obj.historic_areas.append(2*(nbox[2]+nbox[3]))
         self.current_obj.cl = cl # 0,1,2 ..
         self.current_obj.label = self.inv_classes[cl]  # nozzle, pipe ..
         self.current_obj.centroid = (nbox[0], nbox[1]) #self.evaluate_centroid() # to evaluate centroids starting from nbox
@@ -66,10 +67,12 @@ class Tracker(object):
     def update_old(self, old):
         old.lframe = self.current_frame  # i am updating the object
         old.lvideo_sec = self.current_frame / self.fps
+        old.tot_sec = old.lvideo_sec - old.ffvideo_sec
         old.centroid = self.current_obj.centroid
         #old.centroids.append(self.current_obj.centroid)
         old.bbox = self.current_obj.bbox
         old.nbox = self.current_obj.nbox
+        old.historic_areas.append(old.nbox[2]*old.nbox[3])
 
     def update_field(self): # we enter here when we have a new object type or a new obj
         total = self.total_objects[self.current_obj.label]
@@ -79,7 +82,6 @@ class Tracker(object):
         self.current_obj.lframe = self.current_frame
         self.current_obj.lvideo_sec = self.current_obj.lframe /  self.fps
         self.active_det[self.current_obj.label].append(self.current_obj)
-
         self.total_objects[self.current_obj.label] += 1 # update counting objects
 
     def min_dist(self):

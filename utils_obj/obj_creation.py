@@ -10,9 +10,11 @@ class Obj(object):
         self.fvideo_sec = None # first second where it appears in the video
         # change as the object moves:
         self.lframe = None
+        self.tot_sec = None
         self.lvideo_sec = None # last second of video where it appears
         self.nbox = None  # xywh in normalized form
         self.bbox = None
+        self.historic_areas = []
         self.centroid = None
         self.dist = 1000
        # self.centroids = []
