@@ -1,6 +1,6 @@
 # method for tracking the object
 import yaml
-from utils_obj import obj_creation as Obj
+from utils_obj.obj_creation import Obj
 import numpy as np
 import json
 import pandas as pd
@@ -21,12 +21,13 @@ class Tracker(object):
         self.classes = list(_[0].keys())
         self.active_det = {k: [] for k in self.classes}
         self.deregistered_objs = {k: [] for k in self.classes} # objects that have been detected but are no more visible
-        self.current_obj = Obj.Obj()
+        self.current_obj = Obj()
         self.distance_th = 0.065
         self.prev_dist = {k:[] for k in self.classes}
         self.total_objects = {k:0 for k in self.classes}
 
-    def info(self, fps, save_dir):
+    def info(self, fps, save_dir, video_duration):
+        self.video_duration = video_duration
         self.fps = fps
         self.save_dir = save_dir
         self.max_fr_deregister = int(fps)
@@ -37,7 +38,6 @@ class Tracker(object):
         self.current_frame = current_frame
         self.current_obj.nbox = nbox #  xywh normalized
         self.current_obj.bbox = bbox # xyxy not normalized
-        # self.current_obj.historic_areas.append(2*(nbox[2]+nbox[3]))
         self.current_obj.cl = cl # 0,1,2 ..
         self.current_obj.label = self.inv_classes[cl]  # nozzle, pipe ..
         self.current_obj.centroid = (nbox[0], nbox[1]) #self.evaluate_centroid() # to evaluate centroids starting from nbox
@@ -60,19 +60,23 @@ class Tracker(object):
                 # other objects are not at min dist: new obj
                 self.update_field()
         id = self.current_obj.id
-        self.current_obj = Obj.Obj()  # clear object for next assignation
+        self.current_obj = Obj()  # clear object for next assignation
         self.deregister() # deregister all objects absent for more than a threshold
         return id
 
     def update_old(self, old):
         old.lframe = self.current_frame  # i am updating the object
         old.lvideo_sec = self.current_frame / self.fps
-        old.tot_sec = old.lvideo_sec - old.ffvideo_sec
+        old.tot_sec = old.lvideo_sec - old.fvideo_sec
         old.centroid = self.current_obj.centroid
         #old.centroids.append(self.current_obj.centroid)
         old.bbox = self.current_obj.bbox
         old.nbox = self.current_obj.nbox
-        old.historic_areas.append(old.nbox[2]*old.nbox[3])
+        a = {'frame':self.current_frame, 'width':self.current_obj.nbox[2],
+             'height':self.current_obj.nbox[3]}
+        a['max_dim'] =  max(a['height'], a ['width'])
+        old.past_appearance.append(a)
+        a ={}
 
     def update_field(self): # we enter here when we have a new object type or a new obj
         total = self.total_objects[self.current_obj.label]
@@ -81,6 +85,11 @@ class Tracker(object):
         self.current_obj.fvideo_sec = self.current_obj.fframe /  self.fps
         self.current_obj.lframe = self.current_frame
         self.current_obj.lvideo_sec = self.current_obj.lframe /  self.fps
+        a = {'frame': self.current_frame, 'width': self.current_obj.nbox[2], 'height': self.current_obj.nbox[3]}
+        a['max_dim'] =  max(a['height'], a ['width'])
+        self.current_obj.past_appearance.append(a)
+        a = {}
+
         self.active_det[self.current_obj.label].append(self.current_obj)
         self.total_objects[self.current_obj.label] += 1 # update counting objects
 
@@ -108,9 +117,9 @@ class Tracker(object):
             pass
 
     def print_results(self):
-        self.clean_short_periods()
+        # self.clean_short_periods() # I want all
         self.deregister(all=True) # first I deregister everything
-        #print(self.deregistered_objs)
+        self.evaluate_tot_sec() # I evaluate the total seconds of apperance for each object
         result = self.convert_objects() # then, I convert each object in a dictionary to be json serializable
 
         # long and detailed summary
@@ -119,9 +128,18 @@ class Tracker(object):
         j.close()
 
         # short summary of total objects
+        self.total_objects['fps'] = self.fps
+        self.total_objects['video_duration (s)'] = self.video_duration
         with open(str(self.save_dir) + '/brief.json', 'w') as j:
             json.dump(self.total_objects, j, indent=4)
         j.close()
+
+
+    def evaluate_tot_sec(self):
+        for k,v in list(self.deregistered_objs.items()):
+            for o in v:
+                o.tot_sec = o.lvideo_sec - o.fvideo_sec
+
 
     def clean_short_periods(self):
         # remove objects that appeared for less than fps/2
@@ -139,7 +157,8 @@ class Tracker(object):
                 result[k].append(element.__dict__)
         return result
 
-
+    def convert_app_obj(self):
+        pass
 
     def deregister(self, all=False):
         # when an object is not seen for more than self.max_fr_deregister = 10, it is deregistered

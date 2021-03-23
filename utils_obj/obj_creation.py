@@ -14,7 +14,8 @@ class Obj(object):
         self.lvideo_sec = None # last second of video where it appears
         self.nbox = None  # xywh in normalized form
         self.bbox = None
-        self.historic_areas = []
+        self.past_appearance = []
         self.centroid = None
         self.dist = 1000
        # self.centroids = []
+

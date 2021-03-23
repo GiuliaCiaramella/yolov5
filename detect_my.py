@@ -50,7 +50,7 @@ def detect(save_img=False):
 
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
-    model_feat = attempt_load(weights, map_location=device)
+    # model_feat = attempt_load(weights, map_location=device)
     stride = int(model.stride.max())  # model stride
     imgsz = check_img_size(imgsz, s=stride)  # check img_size
     if half:
@@ -85,9 +85,10 @@ def detect(save_img=False):
     with Bar('detection...', max=dataset.nframes) as bar:
         for path, img, im0s, vid_cap in dataset:
             fps = vid_cap.get(cv2.CAP_PROP_FPS)
+            duration = vid_cap.get(cv2.CAP_PROP_FRAME_COUNT) / vid_cap.get(cv2.CAP_PROP_FPS)
             # pass info to tracker
             if i == 0:
-                tracker.info(fps = fps, save_dir = save_dir)
+                tracker.info(fps = fps, save_dir = save_dir, video_duration = duration)
                 # sim.info(fps = fps, save_dir = save_dir) # qui
                 i=1
 
@@ -234,7 +235,7 @@ if __name__ == '__main__':
 
     # once read the proper yaml path, read weight file path
     wp = current_yaml['weight_file_path']
-    weights = [os.path.join(wp, i) for i in os.listdir(wp) if i.endswith('pt')]  # * means all if need specific format then *.csv
+    weights = [os.path.join(wp, i) for i in os.listdir(wp) if i.endswith('pt')]
     weight = max(weights, key=os.path.getctime) # take the last weight
 
     # read conf lower limit adn img size of inference
@@ -322,28 +323,28 @@ if __name__ == '__main__':
                 detect()
                 strip_optimizer(opt.weights)
         else:
-            # detect()
-            import cProfile
-            import pstats
-            from pstats import SortKey
-            import io
-            import datetime
+            detect()
+            # import cProfile
+            # import pstats
+            # from pstats import SortKey
+            # import io
+            # import datetime
 
-            pr = cProfile.Profile()
-            pr.enable()
-            my_res = detect()
-            pr.disable()
-
-            result = io.StringIO()
-            p = pstats.Stats(pr, stream=result).sort_stats(SortKey.CUMULATIVE)
-            # p = pstats.Stats(pr, stream=result).sort_stats(SortKey.TIME)
-
-            p.print_stats()
-
-            name = os.path.basename(Path(source)).split('.')[0]
-            with open(name+'_'+datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss")+'.txt', 'w+') as f:
-                f.write(result.getvalue())
-            f.close()
+            # pr = cProfile.Profile()
+            # pr.enable()
+            # my_res = detect()
+            # pr.disable()
+            #
+            # result = io.StringIO()
+            # p = pstats.Stats(pr, stream=result).sort_stats(SortKey.CUMULATIVE)
+            # # p = pstats.Stats(pr, stream=result).sort_stats(SortKey.TIME)
+            #
+            # p.print_stats()
+            #
+            # name = os.path.basename(Path(source)).split('.')[0]
+            # with open(name+'_'+datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss")+'.txt', 'w+') as f:
+            #     f.write(result.getvalue())
+            # f.close()
 
 
 
