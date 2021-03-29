@@ -288,20 +288,20 @@ i = False
 # pip install imageio-ffmpeg
 
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
-# start_time = 0#'01:04'
-# end_time= 10 #'01:34'
-# input_video = r'F:\VivaDrive\v3d\fragmented_video_drone\pressure vessel\061_0038.MOV'
-# output_video = r'F:\VivaDrive\v3d\fragmented_video_drone\pressure vessel\061_0038_cut_10.MOV'
+start_time = 5*60+10
+end_time= 6*60+26
+input_video = r'F:\VivaDrive\v3d\BASF-F866-C200\F866-C200\123_0038.MOV'
+output_video = r'F:\VivaDrive\v3d\BASF-F866-C200\F866-C200\123_0038_cut.MOV'
 # ffmpeg_extract_subclip(input_video, start_time, end_time, targetname=output_video)
 
 
 
 
 import glob
-import cv2
-
-img_dir = os.path.abspath('../runs/detect/exp4/suggested_annot')
-label_tool_path = os.path.abspath('../utils/labelImg-master/labelImg_after_detection.py')
+# import cv2
+#
+# img_dir = os.path.abspath('../runs/detect/exp4/suggested_annot')
+# label_tool_path = os.path.abspath('../utils/labelImg-master/labelImg_after_detection.py')
 
 # for i in glob.glob(img_dir+'/*.jpg'):
 #     print(i)
@@ -312,24 +312,24 @@ label_tool_path = os.path.abspath('../utils/labelImg-master/labelImg_after_detec
 #
 
 
-img_dir = os.path.abspath('runs/detect/exp4/suggested_annot')
-predefined_class_file = os.path.abspath('runs/detect/exp4/suggested_annot/classes.txt')
-label_tool_path = os.path.abspath('utils/labelImg-master/labelImg_after_detection.py')
-
-# create txt in the same folder
-
-label_tool_path = '"' + label_tool_path + '"'
-img_dir = '"' + img_dir + '"'
-predefined_class_file = '"'+ predefined_class_file + '"'
-import subprocess
-
-cmd = 'python ' + label_tool_path + \
-      ' --image_dir ' + img_dir + \
-      ' --save_dir ' + img_dir + \
-      ' --predefined_classes_file '+ predefined_class_file
-s = subprocess.call(cmd, shell=True)
-
-
+# img_dir = os.path.abspath('runs/detect/exp4/suggested_annot')
+# predefined_class_file = os.path.abspath('runs/detect/exp4/suggested_annot/classes.txt')
+# label_tool_path = os.path.abspath('utils/labelImg-master/labelImg_after_detection.py')
+#
+# # create txt in the same folder
+#
+# label_tool_path = '"' + label_tool_path + '"'
+# img_dir = '"' + img_dir + '"'
+# predefined_class_file = '"'+ predefined_class_file + '"'
+# import subprocess
+#
+# cmd = 'python ' + label_tool_path + \
+#       ' --image_dir ' + img_dir + \
+#       ' --save_dir ' + img_dir + \
+#       ' --predefined_classes_file '+ predefined_class_file
+# s = subprocess.call(cmd, shell=True)
+#
+#
 
 
 # source = r'C:\Users\Giulia Ciaramella\Desktop\v3d\cut-videos-ai\02_1_3noz_1internal.mp4'

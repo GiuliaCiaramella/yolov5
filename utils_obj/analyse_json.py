@@ -80,7 +80,7 @@ def skipped_frames():
 
             # print(sk if sk>0 else None)
 
-def notable_objects(min_dim=0.3, min_duration=0, sk_th = 10):
+def notable_objects(min_dim=0.3, min_duration=2, sk_th = 10):
     # notable objects are thos that respect the filters (parameters of the function)
     # saves new json if notable objects are found
     results = []

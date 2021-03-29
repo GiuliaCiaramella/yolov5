@@ -62,15 +62,17 @@ def detect(save_img=False):
     #     modelc = load_classifier(name='resnet101', n=2)  # initialize
     #     modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
 
+    # initialize classifier for feature vector
+    extract_features = False
+    if extract_features:
+        modelc = load_classifier(name='resnet101', n=2)  # initialize
+        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
+
+
     # Set Dataloader
     vid_path, vid_writer = None, None
-    if webcam:
-        view_img = True
-        cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz, stride=stride)
-    else:
-        save_img = True
-        dataset = LoadImages(source, img_size=imgsz, stride=stride)
+    save_img = True
+    dataset = LoadImages(source, img_size=imgsz, stride=stride)
 
     # Get names and colors
     names = model.module.names if hasattr(model, 'module') else model.names
@@ -82,6 +84,7 @@ def detect(save_img=False):
     t0 = time.time()
     i = 0
     f = 0
+    fvs = torch.Tensor([])
     with Bar('detection...', max=dataset.nframes) as bar:
         for path, img, im0s, vid_cap in dataset:
             fps = vid_cap.get(cv2.CAP_PROP_FPS)
@@ -99,10 +102,17 @@ def detect(save_img=False):
                 img = img.unsqueeze(0)
 
             # Inference
+            # print(img.shape) # [1,3, W,H]
             # t1 = time_synchronized()
+
             if dataset.frame >= start_frame and dataset.frame<end_frame : # first frame is
-                pred_total = model(img, augment=opt.augment)
-                pred = model(img, augment=opt.augment)[0]
+
+                pred = model(img, augment=opt.augment)[0] # this is a tuple
+                # pred = pred_total[0] # tensor [1,6552,9]
+                # feat_tensor = pred_total[2] # tensor  [1,2808]
+                # print(feat_tensor.shape)
+                # if feat_tensor.shape[1]>1000:
+                #     fvs = torch.cat((fvs,feat_tensor), 0 )
 
 
                 # Apply NMS
@@ -113,19 +123,19 @@ def detect(save_img=False):
                 # if classify:
                 #     pred = apply_classifier(pred, modelc, img, im0s)
 
+                # Apply classifier to retrieve feature vector
+
+
             else:
                 f+=1
                 pred = [torch.Tensor([])]
 
             for i, det in enumerate(pred):  # detections per image
-                if webcam:  # batch_size >= 1
-                    p, s, im0, frame = path[i], '%g: ' % i, im0s[i].copy(), dataset.count
-                else:
-                    p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
+                p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
 
                 p = Path(p)  # to Path
                 save_path = str(save_dir / p.name)  # img.jpg
-                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
+                # txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
                 s += '%gx%g ' % img.shape[2:]  # print string
                 gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
                 clean_im = im0.copy()
@@ -166,29 +176,46 @@ def detect(save_img=False):
                     # if s_ == 'not_sim':
                     #     sim.save_detection(lines)
 
-                # Save results frames with detection
-                if save_img:
-                    if dataset.mode == 'image':
-                        cv2.imwrite(save_path, im0)
-                    else:  # 'video'
-                        if vid_path != save_path:  # new video
-                            vid_path = save_path
-                            if isinstance(vid_writer, cv2.VideoWriter):
-                                vid_writer.release()  # release previous video writer
+                    ## new way to extract features
+                    if extract_features:
+                        feat_tensor = apply_classifier(pred, modelc, img, im0s)
+                        fvs = torch.cat((fvs, feat_tensor), 0)
 
-                            fourcc = 'mp4v'  # output video codec
-                            w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                            h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                            vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
+                # save video
+                if vid_path != save_path:  # new video
+                    vid_path = save_path
+                    if isinstance(vid_writer, cv2.VideoWriter):
+                        vid_writer.release()  # release previous video writer
 
-                        vid_writer.write(im0)
-                        # res = cv2.resize(im0, (416,416))
-                        # cv2.imshow('frame', res)
+                    fourcc = 'mp4v'  # output video codec
+                    w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                    h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
 
-                        # cv2.imshow('frame', im0)
-                        cv2.waitKey(1)
+                vid_writer.write(im0)
+                res = cv2.resize(im0, (416,416))
+                cv2.imshow('frame', res)
+
+                # cv2.imshow('frame', im0)
+                cv2.waitKey(1)
 
             bar.next()
+
+
+    # save fvs in a txt file
+    import numpy as np
+    try:
+        vec_path = save_dir / './feat_vectors.txt'  # os.path.join(path,'feat_vectors.txt' )
+        fvs_array = fvs.detach().cpu().numpy()
+        mat = np.matrix(fvs_array)
+
+        with open(vec_path, 'wb') as f:
+            for line in mat:
+                np.savetxt(f, line, fmt='%.2f')
+            f.close()
+
+    except Exception as e:
+        print(e)
 
 
 
