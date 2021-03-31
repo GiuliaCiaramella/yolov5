@@ -154,6 +154,14 @@ class ConfusionMatrix:
                 if not any(m1 == i):
                     self.matrix[self.nc, dc] += 1  # background FN
 
+        mat = np.matrix(self.matrix)
+
+        with open('hey.txt', 'wb') as f:
+            for line in mat:
+                np.savetxt(f, line, fmt='%.2f')
+            f.close()
+        print('MATRIX SAVED')
+
     def matrix(self):
         return self.matrix
 

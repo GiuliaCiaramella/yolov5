@@ -102,7 +102,7 @@ class SPP(nn.Module):
 
 
 class Focus(nn.Module):
-    # Focus wh information into c-space
+    # Focus wh information into channel-space
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
         super(Focus, self).__init__()
         self.conv = Conv(c1 * 4, c2, k, s, p, g, act)

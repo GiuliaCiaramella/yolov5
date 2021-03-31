@@ -117,7 +117,6 @@ def vectorize(feat_vec_path, im_path):
         f.close()
     return(not_cop)
 
-
 def check_sim(vec, data, sim_th=0.95, obj=0):
     """
     evaluate the similarity between 1 vector and all the other vectors in data.
@@ -175,7 +174,6 @@ def remove_sim(feat_vec_path, im_path, create_feat=False,  sim_th=0.95):
         else:
             print('Done. No images where removed.')
 
-
 def del_im(where, im_path):
     im = [i for i in os.listdir(im_path) if i.split('.')[-1].lower() in img_formats]
     c = os.path.join(im_path, 'removed')
@@ -197,8 +195,6 @@ def update_feat_matrix(data, feat_vec_path):
         return ('New features vector data updated')
     except Exception as e:
         print('Error occurred when updating the new feature dataset: ', e)
-
-
 
 def array2image(im_array):
 
@@ -223,13 +219,11 @@ class Sim(object):
         self.classes, _ = read_classes(yaml_file)
         self.skip = 1 # frames to skip similarity check.
 
-
     def info(self, fps, save_dir):
         self.fps = fps
         self.temp_pic = str(save_dir)+'/suggested_annot/'  # './temp_label/'
         if not os.path.exists(self.temp_pic):
             os.makedirs(self.temp_pic)
-
 
     def new_im(self, im, frame):
         """
@@ -277,8 +271,6 @@ class Sim(object):
 
         self.new_temp_path = ''
 
-
-
     def end(self):
         if self.added:
             print(Back.GREEN + 'New images available for labeling are temp saved in '+Fore.RED+ self.temp_pic + Style.RESET_ALL)
@@ -297,7 +289,6 @@ class Sim(object):
 
         else:
             print('\033[92mThis video contained images similar to what we already have in the server. Thank you!\033[0m')
-
 
     def render_images(self):
         ann = []
@@ -341,16 +332,8 @@ class Sim(object):
 
 
 if __name__=='__main__':
-    pass
     # path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized\feat_vectors.txt'
-    # feat_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\image_divers\not copied\feat_vectors.txt'
-    # im_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\image_divers\not copied'
-    # remove_sim(feat_path, im_path, create_feat=True)
-
-    # a = np.full((3,3), 3)
-    # print(a)
-    # b = np.full_like(a, 1)
-    # print(b)
+    pass
 
 
 
