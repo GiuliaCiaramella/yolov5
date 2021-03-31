@@ -13,7 +13,7 @@ from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import check_img_size, check_requirements, non_max_suppression, apply_classifier, scale_coords, \
     xyxy2xywh, strip_optimizer, set_logging, increment_path
-from utils.plots import plot_one_box
+from utils.plots import plot_one_box_ours
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 from progress.bar import Bar
 
@@ -21,7 +21,7 @@ from progress.bar import Bar
 from utils_obj.obj_tracker import Tracker
 
 warnings.filterwarnings(action='ignore')
-
+import torch.nn as nn
 
 def detect(save_img=False):
     source, start_frame, end_frame, weights, view_img, save_txt, imgsz, yaml_file = opt.source, \
@@ -63,8 +63,8 @@ def detect(save_img=False):
     #     modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
 
     # initialize classifier for feature vector
-    extract_features = False
-    if extract_features:
+    detect_degradation = False
+    if detect_degradation:
         modelc = load_classifier(name='resnet101', n=2)  # initialize
         modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
 
@@ -85,6 +85,7 @@ def detect(save_img=False):
     i = 0
     f = 0
     fvs = torch.Tensor([])
+    adapt = nn.AdaptiveAvgPool2d((1,2500))
     with Bar('detection...', max=dataset.nframes) as bar:
         for path, img, im0s, vid_cap in dataset:
             fps = vid_cap.get(cv2.CAP_PROP_FPS)
@@ -108,11 +109,8 @@ def detect(save_img=False):
             if dataset.frame >= start_frame and dataset.frame<end_frame : # first frame is
 
                 pred = model(img, augment=opt.augment)[0] # this is a tuple
-                # pred = pred_total[0] # tensor [1,6552,9]
-                # feat_tensor = pred_total[2] # tensor  [1,2808]
-                # print(feat_tensor.shape)
-                # if feat_tensor.shape[1]>1000:
-                #     fvs = torch.cat((fvs,feat_tensor), 0 )
+                feat_tensor = adapt(pred)
+                fvs = torch.cat((fvs, feat_tensor), 0)
 
 
                 # Apply NMS
@@ -167,7 +165,7 @@ def detect(save_img=False):
 
                         if save_img or view_img:  # Add bbox to image
                             label = f'{names[int(cls)]} {conf:.2f}'
-                            plot_one_box(xyxy, im0, objectID = id,  label=label, color=colors[int(cls)], line_thickness=3) # label=label
+                            plot_one_box_ours(xyxy, im0, objectID = id,  label=label, color=colors[int(cls)], line_thickness=3) # label=label
 
                     # save detection in case the inspector wants to label the suggested images
                     # pass image to check similatiry
@@ -177,9 +175,9 @@ def detect(save_img=False):
                     #     sim.save_detection(lines)
 
                     ## new way to extract features
-                    if extract_features:
-                        feat_tensor = apply_classifier(pred, modelc, img, im0s)
-                        fvs = torch.cat((fvs, feat_tensor), 0)
+                    # if extract_features:
+                    #     feat_tensor = apply_classifier(pred, modelc, img, im0s)
+                    #     fvs = torch.cat((fvs, feat_tensor), 0)
 
                 # save video
                 if vid_path != save_path:  # new video
