@@ -154,13 +154,7 @@ class ConfusionMatrix:
                 if not any(m1 == i):
                     self.matrix[self.nc, dc] += 1  # background FN
 
-        mat = np.matrix(self.matrix)
 
-        with open('hey.txt', 'wb') as f:
-            for line in mat:
-                np.savetxt(f, line, fmt='%.2f')
-            f.close()
-        print('MATRIX SAVED')
 
     def matrix(self):
         return self.matrix
@@ -171,6 +165,13 @@ class ConfusionMatrix:
 
             array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)  # normalize
             array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
+
+            mat = np.matrix(array)
+
+            with open('prova.txt', 'wb') as f:
+                for line in mat:
+                    np.savetxt(f, line, fmt='%.2f')
+                f.close()
 
             fig = plt.figure(figsize=(12, 9), tight_layout=True)
             sn.set(font_scale=1.0 if self.nc < 50 else 0.8)  # for label size
