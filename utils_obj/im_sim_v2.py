@@ -314,8 +314,9 @@ class Sim(object):
         import subprocess
 
         img_dir = os.path.abspath(self.temp_pic)
-        label_tool_path = os.path.abspath('utils/labelImg-master/labelImg_after_detection.py')
-        clfile = os.path.join(img_dir, 'classes.txt')
+        l = r"C:\Users\Giulia Ciaramella\labeling_tool\labelImg-master\labelImg_after_detection.py"
+        label_tool_path = os.path.abspath(l)
+        clfile = os.path.join(img_dir, "classes.txt")
         predefined_class_file = os.path.abspath(clfile)
 
         # create txt in the same folder
@@ -339,7 +340,7 @@ class Sim(object):
 if __name__=='__main__':
     im_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized - Copia - Copia'
     v_path = r'C:\Users\Giulia Ciaramella\Desktop\v3d\edge_data\modified_st_raw\images_new_resized - Copia - Copia\feat_vectors_Xception.txt'
-    remove_sim(v_path, im_path, sim_th=0.93)
+    # remove_sim(v_path, im_path, sim_th=0.93)
 
 
 
