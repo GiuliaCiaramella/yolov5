@@ -41,13 +41,10 @@ logger = logging.getLogger(__name__)
 
 
 def train(hyp, opt, device, tb_writer=None):
-    
-    row_list=[]    #intialize row_list to write csv file
-    header = ['P\t', 'R\t', 'map05\t', 'map9\t\n'] 
-    textfile = open("metrics.txt", "a")
-    textfile.writelines(header)
-    
-    
+    textfile = open("metrics.csv", "a")
+    csv_writer = csv.writer(textfile, delimiter=',',
+                            quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    csv_writer.writerow(["P", "R", "map05", "map9"])
     logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
     save_dir, epochs, batch_size, total_batch_size, weights, rank = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank
@@ -385,11 +382,7 @@ def train(hyp, opt, device, tb_writer=None):
             
  #------------------------writing to csv file-----------------------------------------------------           
             r_list = list(results)
-            row_list.append(str(r_list[0])+"\t")
-            row_list.append(str(r_list[1])+"\t")
-            row_list.append(str(r_list[2])+"\t")
-            row_list.append(str(r_list[3])+"\t\n")
-            textfile.writelines(row_list)
+            csv_writer.writerow([str(r_list[0]), str(r_list[1]), str(r_list[2]), str(r_list[3])])
             
             #print(row_list)
 #----------------------------writing to csv file ----------------------------------------------------
