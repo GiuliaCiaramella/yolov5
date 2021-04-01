@@ -13,15 +13,14 @@ from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import check_img_size, check_requirements, non_max_suppression, apply_classifier, scale_coords, \
     xyxy2xywh, strip_optimizer, set_logging, increment_path
-from utils.plots import plot_one_box
+from utils.plots import plot_one_box_ours
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 from progress.bar import Bar
 
-# from utils_obj.im_sim import Sim # qui
+from utils_obj.im_sim_v2 import Sim # qui
 from utils_obj.obj_tracker import Tracker
 
 warnings.filterwarnings(action='ignore')
-
 
 def detect(save_img=False):
     source, start_frame, end_frame, weights, view_img, save_txt, imgsz, yaml_file = opt.source, \
@@ -30,14 +29,10 @@ def detect(save_img=False):
                                                                                           opt.weights, opt.view_img, \
                                                                                           opt.save_txt, opt.img_size, \
                                                                                                            opt.yaml_file
-    webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
-        ('rtsp://', 'rtmp://', 'http://'))
-
-
 
     # initialize Tracker and sim
     tracker = Tracker(yaml_file) # yaml file to read classes
-    # sim = Sim(yaml_file=yaml_file) # qui
+    sim = Sim(yaml_file=yaml_file) # qui
 
     # Directories
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
@@ -50,7 +45,6 @@ def detect(save_img=False):
 
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
-    # model_feat = attempt_load(weights, map_location=device)
     stride = int(model.stride.max())  # model stride
     imgsz = check_img_size(imgsz, s=stride)  # check img_size
     if half:
@@ -63,8 +57,8 @@ def detect(save_img=False):
     #     modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
 
     # initialize classifier for feature vector
-    extract_features = False
-    if extract_features:
+    detect_degradation = False
+    if detect_degradation:
         modelc = load_classifier(name='resnet101', n=2)  # initialize
         modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
 
@@ -84,7 +78,7 @@ def detect(save_img=False):
     t0 = time.time()
     i = 0
     f = 0
-    fvs = torch.Tensor([])
+
     with Bar('detection...', max=dataset.nframes) as bar:
         for path, img, im0s, vid_cap in dataset:
             fps = vid_cap.get(cv2.CAP_PROP_FPS)
@@ -92,39 +86,38 @@ def detect(save_img=False):
             # pass info to tracker
             if i == 0:
                 tracker.info(fps = fps, save_dir = save_dir, video_duration = duration)
-                # sim.info(fps = fps, save_dir = save_dir) # qui
+                sim.info(fps = fps, save_dir = save_dir) # qui
                 i=1
+
+            img_for_sim = img.copy()
 
             img = torch.from_numpy(img).to(device)
             img = img.half() if half else img.float()  # uint8 to fp16/32
             img /= 255.0  # 0 - 255 to 0.0 - 1.0
+
             if img.ndimension() == 3:
                 img = img.unsqueeze(0)
+
 
             # Inference
             # print(img.shape) # [1,3, W,H]
             # t1 = time_synchronized()
 
+
             if dataset.frame >= start_frame and dataset.frame<end_frame : # first frame is
 
-                pred = model(img, augment=opt.augment)[0] # this is a tuple
-                # pred = pred_total[0] # tensor [1,6552,9]
-                # feat_tensor = pred_total[2] # tensor  [1,2808]
-                # print(feat_tensor.shape)
-                # if feat_tensor.shape[1]>1000:
-                #     fvs = torch.cat((fvs,feat_tensor), 0 )
-
-
+                pred = model(img, augment=opt.augment)[0]# this is a tuple
                 # Apply NMS
                 pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
-                # t2 = time_synchronized()
+
+                # Apply second stage classifier Classifier
+                if detect_degradation:
+                    pred = apply_classifier(pred, modelc, img, im0s)
+
 
                 # Apply second stage classifier Classifier
                 # if classify:
                 #     pred = apply_classifier(pred, modelc, img, im0s)
-
-                # Apply classifier to retrieve feature vector
-
 
             else:
                 f+=1
@@ -138,7 +131,7 @@ def detect(save_img=False):
                 # txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
                 s += '%gx%g ' % img.shape[2:]  # print string
                 gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-                clean_im = im0.copy()
+                clean_im = im0.copy() # decomment
 
                 if len(det):
                     # Rescale boxes from img_size to im0 size
@@ -167,19 +160,15 @@ def detect(save_img=False):
 
                         if save_img or view_img:  # Add bbox to image
                             label = f'{names[int(cls)]} {conf:.2f}'
-                            plot_one_box(xyxy, im0, objectID = id,  label=label, color=colors[int(cls)], line_thickness=3) # label=label
+                            plot_one_box_ours(xyxy, im0, objectID = id,  label=label, color=colors[int(cls)], line_thickness=3) # label=label
 
                     # save detection in case the inspector wants to label the suggested images
                     # pass image to check similatiry
                     # can return 'sim' or 'not_sim'. If not_sim, we want to retrieve the detection too
-                    # s_ = sim.new_im(clean_im, frame)  # qui
-                    # if s_ == 'not_sim':
-                    #     sim.save_detection(lines)
-
-                    ## new way to extract features
-                    if extract_features:
-                        feat_tensor = apply_classifier(pred, modelc, img, im0s)
-                        fvs = torch.cat((fvs, feat_tensor), 0)
+                    s_ = sim.new_im(clean_im, frame)  # decomment
+                    # s_ = sim.new_im(img_for_sim, frame)  # qui
+                    if s_ == 'not_sim':
+                        sim.save_detection(lines)
 
                 # save video
                 if vid_path != save_path:  # new video
@@ -193,34 +182,18 @@ def detect(save_img=False):
                     vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
 
                 vid_writer.write(im0)
-                res = cv2.resize(im0, (416,416))
-                cv2.imshow('frame', res)
+                # res = cv2.resize(im0, (416,416))
+                # cv2.imshow('frame', res)
 
                 # cv2.imshow('frame', im0)
-                cv2.waitKey(1)
+                # cv2.waitKey(1)
 
             bar.next()
 
 
-    # save fvs in a txt file
-    import numpy as np
-    try:
-        vec_path = save_dir / './feat_vectors.txt'  # os.path.join(path,'feat_vectors.txt' )
-        fvs_array = fvs.detach().cpu().numpy()
-        mat = np.matrix(fvs_array)
-
-        with open(vec_path, 'wb') as f:
-            for line in mat:
-                np.savetxt(f, line, fmt='%.2f')
-            f.close()
-
-    except Exception as e:
-        print(e)
-
-
 
     tracker.print_results()
-    # sim.end() # qui
+    sim.end() # qui
 
     if save_txt or save_img:
         print(f"Results saved to {save_dir}")
@@ -245,7 +218,7 @@ if __name__ == '__main__':
     file.close()
 
     assets = d['assets']
-    i = False
+    i = True
     while not i:
         value = input("Please choose an asset. You can choose among: \n \033[1m%r\033[0m \n " % "   ".join(
             map(str, assets.keys())))
@@ -255,7 +228,9 @@ if __name__ == '__main__':
             i = True
 
     # read the path for the proper yaml file
-    yaml_file = assets[value]
+    # yaml_file = assets[value]
+    yaml_file = assets['storage_tank']
+
     with open(yaml_file) as file:
         current_yaml = yaml.full_load(file)
     file.close()
