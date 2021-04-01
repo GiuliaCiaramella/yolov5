@@ -37,10 +37,16 @@ from utils.wandb_logging.wandb_utils import WandbLogger, resume_and_get_id
 
 import csv 
 
+
 logger = logging.getLogger(__name__)
 
 
 def train(hyp, opt, device, tb_writer=None):
+    metrics_previous = Path("/metrics.csv")
+    if my_file.is_file():
+        os.rename('mestrics.csv', 'metrics_previous.csv')
+
+
     textfile = open("metrics.csv", "a")
     csv_writer = csv.writer(textfile, delimiter=',',
                             quotechar='"', quoting=csv.QUOTE_MINIMAL)
