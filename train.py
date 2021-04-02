@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 def train(hyp, opt, device, tb_writer=None):
     metrics_previous = Path("/metrics_new.csv")
     if my_file.is_file():
-        os.rename('mestrics_new.csv', 'metrics_previous.csv')
+        os.rename('metrics_new.csv', 'metrics_previous.csv')
 
 
     textfile = open("metrics_new.csv", "w")
