@@ -42,12 +42,12 @@ logger = logging.getLogger(__name__)
 
 
 def train(hyp, opt, device, tb_writer=None):
-    metrics_previous = Path("/metrics.csv")
+    metrics_previous = Path("/metrics_new.csv")
     if my_file.is_file():
-        os.rename('mestrics.csv', 'metrics_previous.csv')
+        os.rename('mestrics_new.csv', 'metrics_previous.csv')
 
 
-    textfile = open("metrics.csv", "a")
+    textfile = open("metrics_new.csv", "w")
     csv_writer = csv.writer(textfile, delimiter=',',
                             quotechar='"', quoting=csv.QUOTE_MINIMAL)
     csv_writer.writerow(["P", "R", "map05", "map9"])
