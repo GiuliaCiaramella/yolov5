@@ -1,83 +1,66 @@
 #!/usr/bin/python3
-
-#kalman filter implementation is from: 
-#https://stackoverflow.com/questions/48739169/how-to-apply-a-rolling-kalman-filter-to-a-column-in-a-dataframe
-
-
 import pandas as pd
-from pykalman import KalmanFilter
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime
+from tslearn.metrics import dtw, dtw_path
+import statistics
 
 
+def autoeval(path_new, path_old):
+#path_new = "/content/metrics_new.csv"
+#path_old = "/content/metrics_old.csv"
+#----------------------------------------moving average to smoothen curves
+    csv_new = pd.read_csv(path_new)
+    csv_new['P_s_new'] = csv_new['P'].rolling(7,min_periods=1).sum()
+    csv_new['R_s_new'] = csv_new['R'].rolling(7,min_periods=1).sum()
+    csv_new['map05_s_new'] = csv_new['map05'].rolling(7,min_periods=1).sum()
+    csv_new['map9_s_new'] = csv_new['map9'].rolling(7,min_periods=1).sum()
 
-df = pd.read_csv('metrics.csv')
-#-------------------------------------kalman filtering----------------------------------
-def rolling_window(a, step):
-    shape   = a.shape[:-1] + (a.shape[-1] - step + 1, step)
-    strides = a.strides + (a.strides[-1],)
-    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
-
-def get_kf_value(y_values):
-    kf = KalmanFilter()
-    Kc, Ke = kf.em(y_values, n_iter=1).smooth(0)
-    return Kc
-wsize = 3
-arr = rolling_window(df.P.values, wsize)
-zero_padding = np.zeros(shape=(wsize-1,wsize))
-arrst = np.concatenate((zero_padding, arr))
-arrkalman = np.zeros(shape=(len(arrst),1))
-
-for i in range(len(arrst)):
-    arrkalman[i] = get_kf_value(arrst[i])
-
-kalmandf_p = pd.DataFrame(arrkalman, columns=['P_k'])
+    metrics_smooth_new = csv_new[['P_s_new', 'R_s_new', 'map05_s_new','map9_s_new']].copy()
 
 
+    csv_old = pd.read_csv(path_old)
+    csv_old['P_s_old'] = csv_old['P'].rolling(7,min_periods=1).sum()
+    csv_old['R_s_old'] = csv_old['R'].rolling(7,min_periods=1).sum()
+    csv_old['map05_s_old'] = csv_old['map05'].rolling(7,min_periods=1).sum()
+    csv_old['map9_s_old'] = csv_old['map9'].rolling(7,min_periods=1).sum()
 
-arr = rolling_window(df.R.values, wsize)
-zero_padding = np.zeros(shape=(wsize-1,wsize))
-arrst = np.concatenate((zero_padding, arr))
-arrkalman = np.zeros(shape=(len(arrst),1))
-for i in range(len(arrst)):
-    arrkalman[i] = get_kf_value(arrst[i])
+    metrics_smooth_old = csv_old[['P_s_old', 'R_s_old', 'map05_s_old','map9_s_old']].copy()
 
-kalmandf_r = pd.DataFrame(arrkalman, columns=['R_k'])
-kalmandf_r= pd.concat([kalmandf_p,kalmandf_r], axis=1)
+    p_list_n = metrics_smooth_new['P_s_new']
+    p_list_o = metrics_smooth_old['P_s_old']
 
+    r_list_n = metrics_smooth_new['R_s_new']
+    r_list_o = metrics_smooth_old['R_s_old']
 
-arr = rolling_window(df.map05.values, wsize)
-zero_padding = np.zeros(shape=(wsize-1,wsize))
-arrst = np.concatenate((zero_padding, arr))
-arrkalman = np.zeros(shape=(len(arrst),1))
-for i in range(len(arrst)):
-    arrkalman[i] = get_kf_value(arrst[i])
+    m05_list_n = metrics_smooth_new['map05_s_new']
+    m05_list_o = metrics_smooth_old['map05_s_old']
 
-kalmandf_05 = pd.DataFrame(arrkalman, columns=['map05_k'])
-kalmandf_05 = pd.concat([kalmandf_r,kalmandf_05], axis=1)
+    map9_list_n = metrics_smooth_new['map9_s_new']
+    map9_list_o = metrics_smooth_old['map9_s_old']
 
-arr = rolling_window(df.map9.values, wsize)
-zero_padding = np.zeros(shape=(wsize-1,wsize))
-arrst = np.concatenate((zero_padding, arr))
-arrkalman = np.zeros(shape=(len(arrst),1))
-for i in range(len(arrst)):
-    arrkalman[i] = get_kf_value(arrst[i])
+#-------------------------moving average-----------------------------
 
-kalmandf_9 = pd.DataFrame(arrkalman, columns=['map90_k'])
-kalmandf_last = pd.concat([kalmandf_05,kalmandf_9], axis=1)
+#---------------differences-------------------------
+    dif = []
 
+    p_dtw = dtw(p_list_n, p_list_o)
+    dif.append(p_dtw)
+    r_dtw = dtw(r_list_n, r_list_o)
+    dif.append(r_dtw)
 
+    m05_dtw = dtw(m05_list_n, m05_list_o)
+    dif.append(m05_dtw)
+    map9_dtw = dtw(map9_list_n, map9_list_o)
+    dif.append(map9_dtw)
 
-emptydf = np.zeros(shape=(len(arrst),1))
-kalmandf_dif_p = pd.DataFrame(kalmandf_last["P_k"]-df["P"], columns=['P dif'])
-kalmandf_dif_r = pd.DataFrame(kalmandf_last["R_k"]-df["R"], columns=['R dif'])
-kalmandf_dif_05 = pd.DataFrame(kalmandf_last["map05_k"]-df["map05"], columns=['map05 dif'])
-kalmandf_dif_90 = pd.DataFrame(kalmandf_last["map90_k"]-df["map9"], columns=['map90 dif'])
-kalmandf_differences = pd.concat([kalmandf_dif_p,kalmandf_p], axis=1)
-kalmandf_differences = pd.concat([kalmandf_dif_r,kalmandf_differences], axis=1)
-kalmandf_differences = pd.concat([kalmandf_dif_05,kalmandf_differences], axis=1)
-kalmandf_differences = pd.concat([kalmandf_dif_90,kalmandf_differences], axis=1)
-#----------------------------------kalman filtering------------------------------------------------------
-print(kalmandf_last)
-print(df)
-print(kalmandf_differences)
-df.to_csv("/content/metrics_kalman.csv")
+    avg_score = statistics.mean(dif)
+#------------------differences---------------------
+    treshold = 0.1
+
+    if avg_score > treshold and m05_list_n.iat[-1] > m05_list_o.iat[-1]:
+      print("Use new model because new model's acurracy and its curve is better")
+    else:
+      print("Use previous model")
