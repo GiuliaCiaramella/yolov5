@@ -42,9 +42,9 @@ logger = logging.getLogger(__name__)
 
 
 def train(hyp, opt, device, tb_writer=None):
-    metrics_previous = Path("/metrics_new.csv")
-    if my_file.is_file():
-        os.rename('metrics_new.csv', 'metrics_previous.csv')
+    metrics_previous = Path("/home/juptyter/yolov5/metrics_new.csv")
+    if metrics_previous.is_file():
+        os.rename('/home/juptyter/yolov5/metrics_new.csv', '/home/juptyter/yolov5/metrics_previous.csv')
 
 
     textfile = open("metrics_new.csv", "w")
