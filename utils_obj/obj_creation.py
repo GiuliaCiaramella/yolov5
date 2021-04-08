@@ -17,5 +17,6 @@ class Obj(object):
         self.past_appearance = []
         self.centroid = None
         self.dist = 1000
+        self.rust = False
        # self.centroids = []
 

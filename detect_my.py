@@ -17,10 +17,12 @@ from utils.plots import plot_one_box_ours
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 from progress.bar import Bar
 
-from utils_obj.im_sim_v2 import Sim # qui
+from utils_obj.im_sim_v3 import Sim # qui
+from utils_obj.im_sim_v3 import rust_classifier
 from utils_obj.obj_tracker import Tracker
 
 warnings.filterwarnings(action='ignore')
+
 
 def detect(save_img=False):
     source, start_frame, end_frame, weights, view_img, save_txt, imgsz, yaml_file = opt.source, \
@@ -82,11 +84,15 @@ def detect(save_img=False):
     with Bar('detection...', max=dataset.nframes) as bar:
         for path, img, im0s, vid_cap in dataset:
             fps = vid_cap.get(cv2.CAP_PROP_FPS)
+
+            width = vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
+            height = vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
             duration = vid_cap.get(cv2.CAP_PROP_FRAME_COUNT) / vid_cap.get(cv2.CAP_PROP_FPS)
             # pass info to tracker
             if i == 0:
                 tracker.info(fps = fps, save_dir = save_dir, video_duration = duration)
-                sim.info(fps = fps, save_dir = save_dir) # qui
+                sim.info(fps = fps, save_dir = save_dir, width=width, height = height) # qui
                 i=1
 
             img_for_sim = img.copy()
@@ -152,8 +158,18 @@ def detect(save_img=False):
                         nbox = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # xywh in normalized form
                         cl = int(cls.item())
                         bbox = torch.tensor(xyxy).view(1, 4)[0].tolist()
+
+
+                        # apply classifier
+                        rust = False
+                        if nbox[2]*nbox[3]>=0.2:
+                            rust = rust_classifier(clean_im, nbox)
+                            print(rust)
+
                         # pass proprieties to Tracker
                         id = tracker.update(nbox, bbox, cl, frame) # object put into the tracker
+                        if rust:
+                            id = id+'_rust'
 
                         l = [int(cls.item())] + nbox
                         lines.append(l)
@@ -325,28 +341,28 @@ if __name__ == '__main__':
                 detect()
                 strip_optimizer(opt.weights)
         else:
-            detect()
-            # import cProfile
-            # import pstats
-            # from pstats import SortKey
-            # import io
-            # import datetime
+            # detect()
+            import cProfile
+            import pstats
+            from pstats import SortKey
+            import io
+            import datetime
 
-            # pr = cProfile.Profile()
-            # pr.enable()
-            # my_res = detect()
-            # pr.disable()
-            #
-            # result = io.StringIO()
-            # p = pstats.Stats(pr, stream=result).sort_stats(SortKey.CUMULATIVE)
-            # # p = pstats.Stats(pr, stream=result).sort_stats(SortKey.TIME)
-            #
-            # p.print_stats()
-            #
-            # name = os.path.basename(Path(source)).split('.')[0]
-            # with open(name+'_'+datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss")+'.txt', 'w+') as f:
-            #     f.write(result.getvalue())
-            # f.close()
+            pr = cProfile.Profile()
+            pr.enable()
+            my_res = detect()
+            pr.disable()
+
+            result = io.StringIO()
+            p = pstats.Stats(pr, stream=result).sort_stats(SortKey.CUMULATIVE)
+            # p = pstats.Stats(pr, stream=result).sort_stats(SortKey.TIME)
+
+            p.print_stats()
+
+            name = os.path.basename(Path(source)).split('.')[0]
+            with open(name+'_'+datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss")+'.txt', 'w+') as f:
+                f.write(result.getvalue())
+            f.close()
 
 
 
