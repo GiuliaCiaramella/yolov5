@@ -228,23 +228,8 @@ if __name__ == '__main__':
 
 
     # from general conf, read which assets already exist and detection can be run
-    general_conf = r'C:\Users\Giulia Ciaramella\PycharmProjects\E2E\general_conf.yaml'
-    with open(general_conf) as file:
-        d = yaml.full_load(file)
-    file.close()
+    assets = {'storage_tank': 'storage_tank.yaml'}
 
-    assets = d['assets']
-    i = True
-    while not i:
-        value = input("Please choose an asset. You can choose among: \n \033[1m%r\033[0m \n " % "   ".join(
-            map(str, assets.keys())))
-        if value not in list(assets.keys()):
-            print('\033[91mError!\033[0m The asset you chose is not in the list.')
-        else:
-            i = True
-
-    # read the path for the proper yaml file
-    # yaml_file = assets[value]
     yaml_file = assets['storage_tank']
 
     with open(yaml_file) as file:
