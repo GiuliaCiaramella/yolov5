@@ -228,7 +228,7 @@ if __name__ == '__main__':
 
 
     # from general conf, read which assets already exist and detection can be run
-    assets = {'storage_tank': 'storage_tank.yaml'}
+    assets = {'storage_tank': r'../../content/drive/MyDrive/storage_tank.yaml'}
 
     yaml_file = assets['storage_tank']
 

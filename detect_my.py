@@ -162,9 +162,9 @@ def detect(save_img=False):
 
                         # apply classifier
                         rust = False
-                        if nbox[2]*nbox[3]>=0.2:
+                        if nbox[2]*nbox[3]>=0.3:
                             rust = rust_classifier(clean_im, nbox)
-                            print(rust)
+                            # print(rust)
 
                         # pass proprieties to Tracker
                         id = tracker.update(nbox, bbox, cl, frame) # object put into the tracker
