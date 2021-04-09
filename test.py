@@ -281,11 +281,11 @@ def test(data,
 if __name__ == '__main__':
 
     # last(1) model trained with 640px images but half dataset and only 50 it
-    weights = 'last (7).pt'
-    data = 'data/storage_tank_data/data.yaml'
-    conf_th = 0.5
-    img_size = 1120
-    save_dir = str(img_size)+'_'
+    #weights = 'last (7).pt'
+    #data = 'data/storage_tank_data/data.yaml'
+    #conf_th = 0.5
+    #img_size = 1120
+    #save_dir = str(img_size)+'_'
 
 
     parser = argparse.ArgumentParser(prog='test.py')
