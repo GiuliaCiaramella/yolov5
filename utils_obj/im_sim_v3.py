@@ -284,6 +284,8 @@ class Sim(object):
                     self.new_temp_path = os.path.join(self.temp_pic,name)
                     self.added[name] = new_vec
                     self.path_im = array2image(im)
+                    # TODO:
+                    # change array2image in imgsave with lycon
                     shutil.copy(self.path_im, self.new_temp_path)
                     #self.skip = 1
                     # print('\033[91mnot sim\033[0m')
@@ -321,20 +323,7 @@ class Sim(object):
             print('\033[92mThis video contained images similar to what we already have in the server. Thank you!\033[0m')
 
     def render_images(self):
-        ann = []
-        # t = self.temp_pic
-        #
-        # im = [os.path.join(t,i) for i in os.listdir(t) if i.split('.')[-1].lower() in img_formats]
-        # im = list(filter(None, im))
-        #
-        # for i in im:
-        #     image = Image.open(i)
-        #     image.show()
-
         # TODO:
-        # call the labeling here. Specify in which folder you want to save images and labels.
-        # this is read in the yaml file. in the init it is stored as: self.save_new_img_path = self.d['temp_tr_data_path']
-        # append the vector of images in the feat_vector txt file
         # the vector of the labeled images needs to be added in the feature vector of the training!
         import subprocess
 
