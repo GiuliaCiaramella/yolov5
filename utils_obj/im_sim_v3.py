@@ -283,10 +283,16 @@ class Sim(object):
                     name = datetime.datetime.utcnow().strftime("%Y-%m-%d-%Hh-%Mm-%Ss-%fmics")+'_original.jpg'
                     self.new_temp_path = os.path.join(self.temp_pic,name)
                     self.added[name] = new_vec
+
+                    # if not windows:
+                    # lycon.save(self.new_temp_path, im)
+
+                    # else:
+
                     self.path_im = array2image(im)
-                    # TODO:
-                    # change array2image in imgsave with lycon
                     shutil.copy(self.path_im, self.new_temp_path)
+
+
                     #self.skip = 1
                     # print('\033[91mnot sim\033[0m')
                     res = 'not_sim'

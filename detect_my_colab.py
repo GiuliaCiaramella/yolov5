@@ -83,14 +83,15 @@ def detect(save_img=False):
 
     with Bar('detection...', max=dataset.nframes) as bar:
         for path, img, im0s, vid_cap in dataset:
-            fps = vid_cap.get(cv2.CAP_PROP_FPS)
 
-            width = vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
-            height = vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-
-            duration = vid_cap.get(cv2.CAP_PROP_FRAME_COUNT) / vid_cap.get(cv2.CAP_PROP_FPS)
             # pass info to tracker
             if i == 0:
+                fps = vid_cap.get(cv2.CAP_PROP_FPS)
+
+                width = vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float `width`
+                height = vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
+                duration = vid_cap.get(cv2.CAP_PROP_FRAME_COUNT) / vid_cap.get(cv2.CAP_PROP_FPS)
                 tracker.info(fps = fps, save_dir = save_dir, video_duration = duration)
                 sim.info(fps = fps, save_dir = save_dir, width=width, height = height) # qui
                 i=1
