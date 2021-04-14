@@ -147,12 +147,14 @@ class ConfusionMatrix:
             if n and sum(j) == 1:
                 self.matrix[gc, detection_classes[m1[j]]] += 1  # correct
             else:
-                self.matrix[self.nc, gc] += 1  # background FP
+                self.matrix[gc, self.nc] += 1  # background FP
 
         if n:
             for i, dc in enumerate(detection_classes):
                 if not any(m1 == i):
-                    self.matrix[dc, self.nc] += 1  # background FN
+                    self.matrix[self.nc, dc] += 1  # background FN
+
+
 
     def matrix(self):
         return self.matrix
@@ -164,12 +166,19 @@ class ConfusionMatrix:
             array = self.matrix / (self.matrix.sum(0).reshape(1, self.nc + 1) + 1E-6)  # normalize
             array[array < 0.005] = np.nan  # don't annotate (would appear as 0.00)
 
+            mat = np.matrix(array)
+
+            with open('prova.txt', 'wb') as f:
+                for line in mat:
+                    np.savetxt(f, line, fmt='%.2f')
+                f.close()
+
             fig = plt.figure(figsize=(12, 9), tight_layout=True)
             sn.set(font_scale=1.0 if self.nc < 50 else 0.8)  # for label size
             labels = (0 < len(names) < 99) and len(names) == self.nc  # apply names to ticklabels
             sn.heatmap(array, annot=self.nc < 30, annot_kws={"size": 8}, cmap='Blues', fmt='.2f', square=True,
-                       xticklabels=names + ['background FP'] if labels else "auto",
-                       yticklabels=names + ['background FN'] if labels else "auto").set_facecolor((1, 1, 1))
+                       xticklabels=names + ['background FN'] if labels else "auto",
+                       yticklabels=names + ['background FP'] if labels else "auto").set_facecolor((1, 1, 1))
             fig.axes[0].set_xlabel('True')
             fig.axes[0].set_ylabel('Predicted')
             fig.savefig(Path(save_dir) / 'confusion_matrix.png', dpi=250)
